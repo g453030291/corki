@@ -18,6 +18,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from corki import views
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+
+    # user
+    path("api/user/", views.get_user, name="get-user"),
 ]
