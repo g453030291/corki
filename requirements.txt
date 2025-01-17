@@ -7,3 +7,5 @@ marker-pdf==1.2.3
 paddlepaddle==2.6.2
 paddleocr==2.9.1
 python-dotenv==1.0.1
+openai==1.59.7
+django-redis==5.4.0

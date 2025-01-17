@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corki",
 ]
 
 MIDDLEWARE = [
@@ -90,6 +91,18 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"rediss://{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/0",
+        "KEY_PREFIX": "corki",
+        "VERSION": 1,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": os.getenv('REDIS_PASSWORD'),
+        }
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
