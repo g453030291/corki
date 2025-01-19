@@ -18,11 +18,22 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from corki import views
+from corki import views, ws_views
+from corki.ws_views.test import WsConsumer
+from corki.ws_views.tts import TTSAndTestWsConsumer
 
 urlpatterns = [
     path("admin/", admin.site.urls),
 
     # user
     path("api/user/", views.get_user, name="get-user"),
+
+    # home
+    path("home", views.home_page, name="home-page"),
+]
+
+websocket_urlpatterns = [
+    # test
+    path("test/", WsConsumer.as_asgi()),
+    path("test/tts", TTSAndTestWsConsumer.as_asgi()),
 ]

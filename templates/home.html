@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TTS WebSocket Test</title>
+</head>
+<body>
+  <!-- Simple text input for the text to synthesize -->
+  <label for="ttsText">请输入要合成的文本:</label>
+  <input id="ttsText" type="text" />
+
+  <!-- Button to submit the text to the TTS WebSocket endpoint -->
+  <button onclick="submitTTS()">提交</button>
+
+  <!-- Audio element to play back the returned TTS audio -->
+  <br>
+  <audio id="ttsPlayer" controls></audio>
+
+  <script>
+    let ws;
+    let audioChunks = [];
+
+    // Establish WebSocket connection when the page loads
+    window.onload = () => {
+      connectWebSocket();
+    };
+
+    function connectWebSocket() {
+      // Replace with your actual WebSocket endpoint
+      ws = new WebSocket("ws://127.0.0.1:8000/test/tts");
+
+      // WebSocket event handlers
+      ws.onopen = () => {
+        console.log("WebSocket connected.");
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // If server sends audio chunks in base64 format:
+        if (data.type === "audio-chunk") {
+          // Convert base64 chunk to Uint8Array
+          const base64String = data.audio_data;
+          const binaryString = atob(base64String);
+          const length = binaryString.length;
+          const bytes = new Uint8Array(length);
+          for (let i = 0; i < length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          // Collect chunks to combine once synthesis is complete
+          audioChunks.push(bytes);
+        }
+
+        // When synthesis is complete, combine audio and play
+        else if (data.type === "tts_complete") {
+          const combined = audioChunks.reduce((acc, val) => {
+            const merged = new Uint8Array(acc.length + val.length);
+            merged.set(acc);
+            merged.set(val, acc.length);
+            return merged;
+          }, new Uint8Array());
+
+          // Create Blob from combined audio and set the source
+          const blob = new Blob([combined], { type: "audio/mp3" });
+          const audioURL = URL.createObjectURL(blob);
+          document.getElementById("ttsPlayer").src = audioURL;
+          document.getElementById("ttsPlayer").play();
+        }
+
+        // Handle any error message from the server
+        else if (data.type === "error") {
+          console.error("TTS Error:", data.message);
+          alert("TTS Error: " + data.message);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket closed.");
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+    }
+
+    // Send the text to synthesize to the server
+    function submitTTS() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        alert("WebSocket is not open. Please wait or refresh the page.");
+        return;
+      }
+
+      // Clear previous audio chunks
+      audioChunks = [];
+      const textToSynthesize = document.getElementById("ttsText").value;
+
+      // Server expects a JSON object with a "msg" field
+      const payload = {
+        msg: textToSynthesize
+      };
+
+      ws.send(JSON.stringify(payload));
+    }
+  </script>
+</body>
+</html>
