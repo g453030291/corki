@@ -11,11 +11,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the application code into the container
-COPY ./api ./api
-
 # Expose the port the app runs on
 EXPOSE 80
 
-# Start the FastAPI application80
-CMD ["python3", "-m", "uvicorn", "api.index:app", "--host", "0.0.0.0", "--port", "80"]
+# Start the Django application
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:80"]
