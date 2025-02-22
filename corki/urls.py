@@ -20,6 +20,7 @@ from django.urls import path
 
 from corki import views
 from corki.ws_views.conversation import ConversationStreamWsConsumer
+from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
 from corki.ws_views.stt_ws import STTStreamWsConsumer
 from corki.ws_views.test import WsConsumer
 from corki.ws_views.tts import TTSAndTestWsConsumer
@@ -53,4 +54,5 @@ websocket_urlpatterns = [
     path("test/stt", STTStreamWsConsumer.as_asgi()),
     path("test/tts_stream", TTSStreamWsConsumer.as_asgi()),
     path("conversation", ConversationStreamWsConsumer.as_asgi()),
+    path("conversation2", ConversationStreamWsConsumer2.as_asgi()),
 ]

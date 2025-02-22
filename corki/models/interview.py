@@ -24,7 +24,7 @@ class InterviewQuestion(models.Model):
     interview_id = models.IntegerField(default=0, null=False, help_text='面试 id')
     question_status = models.IntegerField(default=0, null=False, help_text='问答状态:0=未回答,1=已回答')
     question_type = models.IntegerField(default=0, null=False, help_text='问题类型:0=一级,1=二级,2=三级')
-    parent_id = models.IntegerField(default=0, null=False, help_text='父级问题 id')
+    parent_question_id = models.IntegerField(default=0, null=False, help_text='父级问题 id')
     module = models.CharField(max_length=56, default='', null=False, help_text='问题类型')
     question_content = models.CharField(max_length=128, default='', null=False, help_text='问题内容')
     question_url = models.CharField(max_length=128, default='', null=False, help_text='问题语音 url')

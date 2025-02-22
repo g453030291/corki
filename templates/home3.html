@@ -7,62 +7,100 @@
 <body>
     <!-- 输入区域 -->
     <div>
-        <input type="text" id="inputText">
-        <button onclick="sendMessage()">发送</button>
+        <button onclick="wsConnection()">连接</button>
     </div>
-
-    <!-- 输出区域 -->
     <div>
-        <textarea id="outputText" rows="10" cols="50" readonly></textarea>
+        <audio id="ttsPlayer" controls></audio>
     </div>
 
     <script>
-        // WebSocket连接
-        const ws = new WebSocket('ws://127.0.0.1:8000/test/tts_stream');
+        let ws;
+        let audioContext;
+        let input;
+        let processor;
+        let accumulatedData = [];
+        const sampleRate = 16000;
+        const bufferSize = 4096;
+        let isAudioPlaying = false;
 
-        // 连接建立时的处理
-        ws.onopen = function() {
-            console.log('WebSocket连接已建立');
-        };
+        async function wsConnection() {
+            try {
+                // 1. 先获取音频设备权限
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,           // 单声道
+                        sampleRate: sampleRate,    // 采样率16000Hz
+                        echoCancellation: true,    // 开启回声消除
+                        noiseSuppression: true     // 开启降噪
+                    }
+                });
 
-        // 接收消息的处理
-        ws.onmessage = function(event) {
-            const output = document.getElementById('outputText');
-            // 将新接收的文本追加到已有文本后面
-            event = JSON.parse(event.data);
-            output.value += event.message;
-            // 自动滚动到底部
-            output.scrollTop = output.scrollHeight;
-        };
+                // 设置音频处理
+                audioContext = new AudioContext({
+                    sampleRate: sampleRate,        // 设置音频上下文的采样率
+                    latencyHint: 'interactive'
+                });
 
-        // 连接关闭时的处理
-        ws.onclose = function() {
-            console.log('WebSocket连接已关闭');
-        };
+                input = audioContext.createMediaStreamSource(stream);
+                processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
 
-        // 发生错误时的处理
-        ws.onerror = function(error) {
-            console.error('WebSocket错误:', error);
-        };
+                input.connect(processor);
+                processor.connect(audioContext.destination);
 
-        // 发送消息的函数
-        function sendMessage() {
-            const input = document.getElementById('inputText');
-            const text = input.value.trim();
+                // 处理音频数据
+                processor.onaudioprocess = (e) => {
+                    if (ws && ws.readyState === WebSocket.OPEN &&!isAudioPlaying) {
+                        // 获取音频数据
+                        const inputData = e.inputBuffer.getChannelData(0);
 
-            if (text) {
-                ws.send(text);
-                // 清空输入框
-                input.value = '';
+                        // 转换为16位整数
+                        const pcmData = new Int16Array(inputData.length);
+                        for (let i = 0; i < inputData.length; i++) {
+                            pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 0x7FFF));
+                        }
+
+                        // 累积音频数据
+                        accumulatedData.push(...pcmData);
+
+                        // 发送累积的数据
+                        while (accumulatedData.length >= sampleRate) {
+                            const dataToSend = accumulatedData.slice(0, sampleRate);
+                            ws.send(new Int16Array(dataToSend).buffer);
+                            accumulatedData = accumulatedData.slice(sampleRate);
+                        }
+                    }
+                };
+
+                // 2. 开始连接后端 ws 接口
+                ws = new WebSocket('ws://127.0.0.1:8000/conversation2');
+
+                ws.onopen = function() {
+                    console.log('连接成功');
+                    // 3. 链接成功后，还是发送我现在写死的一个接口数据
+                    ws.send(JSON.stringify({"operation_type": "start", "interview_id": 11}));
+                };
+
+                ws.onmessage = function(e) {
+                    console.log('收到消息：', e.data);
+                    const data = JSON.parse(e.data);
+                    if (data.code === 0 && data.data && data.data.question_url) {
+                        const audio = document.getElementById('ttsPlayer');
+                        audio.src = data.data.question_url;
+                        audio.play();
+                    }
+                };
+
+                ws.onclose = function() {
+                    console.log('连接关闭');
+                };
+
+                ws.onerror = function() {
+                    console.log('连接出错');
+                };
+            } catch (error) {
+                console.error('获取音频设备权限失败:', error);
             }
         }
-
-        // 添加输入框的回车键监听
-        document.getElementById('inputText').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
     </script>
 </body>
 </html>

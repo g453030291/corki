@@ -2,8 +2,10 @@ import gzip
 import json
 import os
 import uuid
+from concurrent.futures import wait
 
 import websockets
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from loguru import logger
 
@@ -21,6 +23,8 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         self.oss_client = OSSClient()
         self.interview_record = None
         self.interview_question = None
+        self.answer_content = ''
+        self.answer_stop_flag = 0
         # 语音识别
         self.sauc_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel"
         self.sauc_ws_client = None
@@ -35,14 +39,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await self.accept()
         logger.info(f"New connection established - Channel Name: {self.channel_name}")
         await self.sauc_init()
-        await self.send(text_data=json.dumps({
-            'code': 0,
-            'msg': 'Welcome to the conversation interface!',
-            'data': {
-                'channel_name': self.channel_name,
-                'sauc_log_id': self.sauc_log_id
-            }
-        }))
+        await self.send(text_data=response_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
 
     async def disconnect(self, close_code):
         await self.sauc_ws_client.close()
@@ -56,11 +53,17 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             text_data = json.loads(text_data)
             if text_data.get('operation_type') == 'start':
                 interview_id = text_data.get('interview_id')
-                self.interview_record = InterviewRecord.objects.get(id=interview_id)
-                self.interview_question = InterviewQuestion.objects.filter(interview_id=interview_id, parent_id=0, question_status=0).order_by('id').first()
-                await self.send(text_data=response_util.success({'question_url': self.interview_question.question_url}))
+                self.interview_record = await database_sync_to_async(InterviewRecord.objects.get)(id=interview_id)
+                self.interview_question = await database_sync_to_async(
+                    lambda: InterviewQuestion.objects.filter(
+                        interview_id=interview_id,
+                        parent_question_id=0,
+                        question_status=0
+                    ).order_by('id').first()
+                )()
+                await self.send(text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
             else:
-                await self.send(response_util.error('99', 'Unknown operation type'))
+                await self.send(response_util.error('99', 'Unknown operation type', True))
         if bytes_data:
             await self.process_voice_bytes(bytes_data)
 
@@ -110,20 +113,25 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
 
         # 解析响应
         result = volcengine_util.sauc_parse_response(response)
-        logger.info(json.dumps(result, indent=4, ensure_ascii=False))
-
+        # logger.info(json.dumps(result, indent=4, ensure_ascii=False))
+        sauc_text = result['payload_msg']['result']['text']
+        logger.info(f'doubao_sauc_text:{sauc_text}')
         # 断句识别
         if 'utterances' in result['payload_msg']['result']:
             definite = result['payload_msg']['result']['utterances'][0]['definite']
-            # print(f"Definite: {definite}")
             if definite:
                 definite_text = result['payload_msg']['result']['utterances'][0]['text']
                 logger.info(f"豆包分句: {definite_text}")
-                await self.get_next_step(self.interview_record.id, self.interview_question.id, definite_text)
+                self.answer_content += definite_text
+                if self.answer_stop_flag >= 5:
+                    await self.get_next_step(self.interview_record.id, self.interview_question.id, definite_text)
+                    await self.send(text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
         if 'payload_msg' in result and 'text' in result['payload_msg']['result']:
-            logger.info(f"豆包识别结果: {result['payload_msg']['result']['text']}")
-            # self.answer_content += result['payload_msg']['result']['text']
-            await self.send(text_data=response_util.success('voice bytes received'))
+            content_text = result['payload_msg']['result']['text']
+            logger.info(f"豆包识别结果: {content_text}")
+            if self.answer_content and len(content_text) == 0:
+                self.answer_stop_flag += 1
+            await self.send(text_data=response_util.success('voice bytes received', True))
         else:
             logger.info(f"Error parsing response: {json.dumps(result, indent=2, ensure_ascii=False)}")
 
@@ -137,22 +145,42 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
     # 判断当前对话进度和状态，给出下一步操作
     async def get_next_step(self, interview_id, question_id, answer_content):
         # 1. 保存用户回答
-        InterviewQuestion.objects.filter(id=self.interview_question.id).update(answer_content=answer_content, question_status=1)
+        update_operation = database_sync_to_async(
+            InterviewQuestion.objects.filter(id=self.interview_question.id).update)
+        await update_operation(answer_content=answer_content, question_status=1)
+
         # 2. 判断当前问题层级
         if self.interview_question.question_type == 0:
             # 2.1 大模型判断是否追问
-            completion_json = conversation_service.follow_up_questions(self.interview_question.question_content, answer_content)
+            completion_json = conversation_service.follow_up_questions(self.interview_question.question_content,
+                                                                       answer_content)
+            create_question = database_sync_to_async(InterviewQuestion.objects.create)
+            sub_questions = []
             for question in completion_json['questions']:
-                question = InterviewQuestion.objects.create(interview_id=interview_id,
-                                                            question_content=question['question'],
-                                                            module=question['module'])
-                submit_task(conversation_service.process_audio, question, self.oss_client)
+                new_question = await create_question(interview_id=interview_id,
+                                                     question_content=question['question'],
+                                                     module=question['module'],
+                                                     question_type=1,
+                                                     parent_question_id=question_id)
+                sub_questions.append(new_question)
+            futures = [submit_task(conversation_service.process_audio, sub_question, self.oss_client) for sub_question in sub_questions]
+            wait(futures)
+
         # 3. 查询下个问题(追问/下轮问答)
-        new_question = InterviewQuestion.objects.filter(interview_id=interview_id,
-                                                        parent_id=question_id,
-                                                        question_status=0).order_by('id').first()
+        filter_questions = database_sync_to_async(InterviewQuestion.objects.filter)
+        first_question = database_sync_to_async(lambda qs: qs.order_by('id').first())
+
+        questions = await filter_questions(interview_id=interview_id,
+                                           parent_question_id=question_id,
+                                           question_status=0)
+        new_question = await first_question(questions)
+
         if not new_question:
-            new_question = InterviewQuestion.objects.filter(interview_id=interview_id,
-                                                            parent_id=0,
-                                                            question_status=0).order_by('id').first()
+            questions = await filter_questions(interview_id=interview_id,
+                                               parent_question_id=0,
+                                               question_status=0)
+            new_question = await first_question(questions)
+
         self.interview_question = new_question
+        self.answer_content = ''
+        self.answer_stop_flag = 0
