@@ -8,6 +8,7 @@
     <!-- 输入区域 -->
     <div>
         <button onclick="wsConnection()">连接</button>
+        <input type="text" id="interview_id" placeholder="请输入会话ID">
     </div>
     <div>
         <audio id="ttsPlayer" controls></audio>
@@ -77,7 +78,8 @@
                 ws.onopen = function() {
                     console.log('连接成功');
                     // 3. 链接成功后，还是发送我现在写死的一个接口数据
-                    ws.send(JSON.stringify({"operation_type": "start", "interview_id": 11}));
+                    interview_id = document.getElementById('interview_id').value;
+                    ws.send(JSON.stringify({"operation_type": "start", "interview_id": interview_id}));
                 };
 
                 ws.onmessage = function(e) {
