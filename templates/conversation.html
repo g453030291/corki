@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>语音对话测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            height: 100vh;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 95vw;
+            height: 95vh;
+            background-color: white;
+            padding: 1.5vh;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 修改为四列布局 */
+        .header-area {
+            display: grid;
+            grid-template-columns: 0.8fr 1.1fr 1.1fr 1.1fr; /* 修改为四列 */
+            gap: 1vw;
+            margin-bottom: 1.5vh;
+        }
+
+        /* 标题和按钮区域 */
+        .title-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1vh;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.2vh;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1vw;
+        }
+
+        button {
+            padding: 0.8vh 1.5vw;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.8vh;
+            transition: all 0.2s ease;
+        }
+
+        #start { background-color: #27ae60; color: white; }
+        #stop { background-color: #e74c3c; color: white; }
+
+        /* 配置区域样式 */
+        .config-section {
+            background-color: #f8f9fa;
+            padding: 1vh;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.8vh;
+            color: #2c3e50;
+            margin-bottom: 1vh;
+            padding-bottom: 0.5vh;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        /* 音频配置样式 */
+        .audio-options {
+            display: grid;
+            gap: 0.8vh;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5vw;
+        }
+
+        .option-item label {
+            color: #495057;
+            font-size: 1.6vh;
+            white-space: nowrap;
+        }
+
+        select {
+            padding: 0.4vh 0.8vh;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1.6vh;
+            flex: 1;
+        }
+
+        /* 分句配置样式 */
+        .sentence-config {
+            display: grid;
+            gap: 0.8vh;
+        }
+
+        .sentence-input-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5vw;
+            position: relative;
+        }
+
+        .sentence-input-item label {
+            color: #495057;
+            font-size: 1.6vh;
+            white-space: nowrap;
+        }
+
+        .sentence-input-item input {
+            padding: 0.4vh 0.8vh;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1.6vh;
+            flex: 1;
+        }
+
+        /* Log 区域样式 */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .content-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .content-section h3 {
+            color: #34495e;
+            margin-bottom: 0.8vh;
+            font-size: 1.8vh;
+        }
+
+        .content-box {
+            flex: 1;
+            padding: 1.5vh;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+            font-size: 1.6vh;
+            line-height: 1.6;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* 滚动条样式 */
+        .content-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .content-box::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        /* Tooltip 样式 */
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 0.8vh;
+            border-radius: 4px;
+            font-size: 1.4vh;
+            width: 250px;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .sentence-input-item:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 分句配置的新样式 */
+        .sentence-config .option-item {
+            margin-bottom: 1vh;
+        }
+
+        /* 初始状态下隐藏所有模式相关的输入项 */
+        .semantic-mode,
+        .silence-mode {
+            display: none;
+        }
+
+        /* 当选择对应模式时显示相关输入项 */
+        .sentence-config.semantic .semantic-mode {
+            display: flex;
+        }
+
+        .sentence-config.silence .silence-mode {
+            display: flex;
+        }
+
+        /* 确保 select 样式与其他输入框一致 */
+        .sentence-config select {
+            width: 100%;
+            padding: 0.4vh 0.8vh;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1.6vh;
+        }
+
+        /* System Prompts 文本框样式 */
+        .prompts-textarea {
+            width: 100%;
+            /* 设置一个固定高度，考虑到 config-section 的 padding 和 section-title 的高度 */
+            height: calc(100% - 4.5vh); /* section-title 的高度约 2.5vh + margin-bottom 1vh + 额外调整空间 1vh */
+            padding: 0.8vh;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1.6vh;
+            resize: none;
+            font-family: inherit;
+            margin-top: 0; /* 确保没有额外的上边距 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-area">
+            <div class="title-section">
+                <h1>语音对话测试</h1>
+                <div class="button-group">
+                    <button id="start">开始对话</button>
+                    <button id="stop">结束对话</button>
+                </div>
+                <audio id="ttsPlayer" controls></audio>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">音频配置</div>
+                <div class="audio-options">
+                    <div class="option-item">
+                        <label for="format">音频容器格式：</label>
+                        <select id="format">
+                            <option>pcm(pcm_s16le)</option>
+                            <option>wav(pcm_s16le)</option>
+                            <option>ogg</option>
+                        </select>
+                    </div>
+                    <div class="option-item">
+                        <label for="codec">音频编码格式：</label>
+                        <select id="codec">
+                            <option>raw</option>
+                            <option>opus</option>
+                        </select>
+                    </div>
+                    <div class="option-item">
+                        <label for="rate">音频采样率：</label>
+                        <select id="rate">
+                            <option>16000</option>
+                        </select>
+                    </div>
+                    <div class="option-item">
+                        <label for="bits">音频采样点位数：</label>
+                        <select id="bits">
+                            <option>16</option>
+                        </select>
+                    </div>
+                    <div class="option-item">
+                        <label for="channel">音频声道数：</label>
+                        <select id="channel">
+                            <option>1(mono)</option>
+                            <option>2(stereo)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="section-title">分句配置</div>
+                <div class="sentence-config">
+                    <div class="option-item">
+                        <label for="segment_mode">分句模式：</label>
+                        <select id="segment_mode">
+                            <option value="semantic">语义分句</option>
+                            <option value="silence">静音分句</option>
+                        </select>
+                    </div>
+
+                    <!-- 语义分句配置 -->
+                    <div class="sentence-input-item semantic-mode">
+                        <label for="vad_segment_duration">语义切句的最大静音阈值：</label>
+                        <input type="text" id="vad_segment_duration" placeholder="3000"/>
+                        <div class="tooltip">
+                            单位ms，默认为3000。当静音时间超过该值时，会将文本分为两个句子。不决定判停，所以不会修改definite出现的位置。在end_window_size配置后，该参数失效。
+                        </div>
+                    </div>
+
+                    <!-- 静音分句配置 -->
+                    <div class="sentence-input-item silence-mode">
+                        <label for="end_window_size">强制判停时间：</label>
+                        <input type="text" id="end_window_size" placeholder="800"/>
+                        <div class="tooltip">
+                            单位ms，默认为800，最小200。静音时长超过该值，会直接判停，输出definite。配置该值，不使用语义分句，根据静音时长来分句。用于实时性要求较高场景，可以提前获得definite句子。
+                        </div>
+                    </div>
+                    <div class="sentence-input-item silence-mode">
+                        <label for="force_to_speech_time">强制语音时间：</label>
+                        <input type="text" id="force_to_speech_time" placeholder="10000"/>
+                        <div class="tooltip">
+                            单位ms，默认为10000，最小0。音频时长超过该值之后，才会判停，根据静音时长输出definite，需配合end_window_size使用。用于解决短音频+实时性要求较高场景，不配置该参数，只使用end_window_size时，前10s不会判停。推荐设置1000，可能会影响识别准确率。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新增 System Prompts 配置区域 -->
+            <div class="config-section">
+                <div class="section-title">System Prompts</div>
+                <textarea id="system_prompts" class="prompts-textarea">你是由字节跳动开发的AI 人工智能助手</textarea>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="content-section">
+                <h3>Log</h3>
+                <div id="log" class="content-box"></div>
+            </div>
+        </div>
+    </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<!-- 加载静态文件标签 -->
+{% load static %}
+{#<script src="{% static 'audio-processor.js' %}"></script>#}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const segmentMode = document.getElementById('segment_mode');
+        const sentenceConfig = document.querySelector('.sentence-config');
+
+        // 设置初始状态
+        updateConfigVisibility(segmentMode.value);
+
+        // 监听分句模式的变化
+        segmentMode.addEventListener('change', function() {
+            updateConfigVisibility(this.value);
+        });
+
+        function updateConfigVisibility(mode) {
+            // 移除所有模式类
+            sentenceConfig.classList.remove('semantic', 'silence');
+            // 添加当前选中的模式类
+            sentenceConfig.classList.add(mode);
+        }
+    });
+
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+    const logBox = document.getElementById('log');
+    const sampleRate = 16000;
+    let audioContext = null;
+    let accumulatedData = [];
+    const bufferSize = 16384;
+    let input = null;
+    let ws;
+
+    // 通用的 contextWrite 方法
+    function contextWrite(msgType, content) {
+        const currentDateTime = moment().format('YYYY-MM-DD HH:mm:ss');
+        logBox.innerHTML += `${currentDateTime}: ${msgType} - ${content}\n`;
+        // 滚动到最底部
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    startBtn.addEventListener('click', async () => {
+        ws = new WebSocket("ws://127.0.0.1:8000/conversation");
+
+        // 绑定 open 事件处理函数
+        ws.onopen = () => {
+            const initData = {
+                "type": "init",
+                "sampleRate": document.getElementById('rate').value,
+                "vadSegmentDuration": document.getElementById('vad_segment_duration').value,
+                "endWindowSize": document.getElementById('end_window_size').value,
+                "forceToSpeechTime": document.getElementById('force_to_speech_time').value,
+                "systemPrompts": document.getElementById('system_prompts').value
+            }
+            ws.send(JSON.stringify(initData));
+            contextWrite('frontend-sys', '开启连接...成功');
+        };
+
+        // 绑定 onerror 事件处理函数
+        ws.onerror = (e) => {
+            contextWrite('frontend-error', e.message);
+        };
+
+        // 绑定 message 事件处理函数
+        ws.onmessage = (event) => {
+            console.log(typeof event.data)
+            if (event.data.includes("audio-chunk")) {
+                contextWrite('backend', '收到返回的语音数据, 长度: ' + event.data.length);
+                contextWrite('backend', event.data)
+                // 播放音频
+                audio_data = JSON.parse(event.data)
+                const base64String = audio_data.data.base64
+                playBase64Audio(base64String);
+            }else {
+                contextWrite('backend', event.data);
+            }
+        };
+
+        // 获取音频流
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                channelCount: 1,           // 单声道
+                sampleRate: sampleRate,    // 采样率16000Hz
+                echoCancellation: true,    // 开启回声消除
+                noiseSuppression: true     // 开启降噪
+            }
+        });
+
+        // 设置音频处理
+        audioContext = new AudioContext({
+            sampleRate: sampleRate,        // 设置音频上下文的采样率
+            latencyHint: 'interactive'
+        });
+
+        input = audioContext.createMediaStreamSource(stream);
+        processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+        input.connect(processor);
+        processor.connect(audioContext.destination);
+
+        // 处理音频数据
+        processor.onaudioprocess = (e) => {
+            console.log(ws.readyState)
+            if (ws.readyState === ws.OPEN) {
+                // 获取音频数据
+                const inputData = e.inputBuffer.getChannelData(0);
+
+                // 转换为16位整数
+                const pcmData = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 0x7FFF));
+                }
+
+                // 累积音频数据
+                accumulatedData.push(...pcmData);
+
+                // 如果累积的数据达到 1 秒（16000 采样点），发送数据
+                if (accumulatedData.length >= sampleRate) {
+                    const dataToSend = accumulatedData.slice(0, sampleRate);
+                    ws.send(new Int16Array(dataToSend).buffer);
+                    accumulatedData = accumulatedData.slice(sampleRate);
+                }
+            }
+        };
+        startBtn.disabled = true;
+    });
+
+    stopBtn.addEventListener('click', () => {
+        if (processor) {
+            processor.disconnect();
+            input.disconnect();
+            audioContext.close();
+        }
+        if (ws) {
+            ws.close();
+            // 绑定 close 事件处理函数
+            ws.onclose = () => {
+                contextWrite('frontend-sys', '结束连接...已关闭');
+            };
+        }
+    });
+
+    async function playBase64Audio(base64String) {
+            try {
+                // 将 Base64 字符串转换为二进制数据
+                const binaryString = atob(base64String);
+                const length = binaryString.length;
+                const bytes = new Uint8Array(length);
+                for (let i = 0; i < length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                // 创建 Blob 对象
+                const blob = new Blob([bytes], { type: "audio/mp3" });
+                // 创建对象 URL
+                const audioURL = URL.createObjectURL(blob);
+                // 获取音频元素
+                const audioElement = document.getElementById("ttsPlayer");
+                if (!audioElement) {
+                    throw new Error('Audio element "ttsPlayer" not found');
+                }
+                // 设置音频源
+                audioElement.src = audioURL;
+                // 尝试播放音频
+                await audioElement.play();
+                console.log('音频播放成功');
+
+                // 清理 Object URL
+                URL.revokeObjectURL(audioURL);
+            } catch (error) {
+                console.error('音频播放失败:', error);
+            }
+        }
+</script>
+</body>
+</html>

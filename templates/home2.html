@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>实时语音识别</title>
+</head>
+<body>
+    <button id="startButton">开始录音</button>
+    <button id="stopButton" disabled>停止录音</button>
+    <br><br>
+    <label for="resultText">识别结果:</label>
+    <textarea id="resultText" rows="10" cols="50" readonly></textarea>
+
+    <script>
+    let websocket = null;
+    let mediaRecorder = null;
+    let audioContext = null;
+    let processor = null;
+    let input = null;
+    const sampleRate = 16000; // 设置采样率为16000Hz
+    const bufferSize = 16384;
+    let accumulatedData = [];
+    let previousText = '';
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const resultText = document.getElementById('resultText');
+
+    startButton.onclick = async () => {
+        try {
+            // 创建WebSocket连接
+            websocket = new WebSocket(`ws://${window.location.host}/test/stt`);
+
+            websocket.onmessage = (event) => {
+                console.log('Received:', event.data);
+                const data = JSON.parse(event.data);
+                if (data.type === 'transcription') {
+                    const newText = data.text;
+                    
+                    // 如果新文本比之前的长，只追加新的部分
+                    if (newText.length > previousText.length && newText.startsWith(previousText)) {
+                        const additionalText = newText.slice(previousText.length);
+                        resultText.value += additionalText + '';
+                    } 
+                    // 如果新文本与之前的不同（可能是修正了之前的识别结果）
+                    else if (newText !== previousText) {
+                        resultText.value = newText + '';
+                    }
+                    
+                    previousText = newText;
+                }
+            };
+
+            // 获取音频流
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    channelCount: 1,           // 单声道
+                    sampleRate: sampleRate,    // 采样率16000Hz
+                    echoCancellation: true,    // 开启回声消除
+                    noiseSuppression: true     // 开启降噪
+                } 
+            });
+
+            // 设置音频处理
+            audioContext = new AudioContext({
+                sampleRate: sampleRate,        // 设置音频上下文的采样率
+                latencyHint: 'interactive'
+            });
+            
+            input = audioContext.createMediaStreamSource(stream);
+            processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+            input.connect(processor);
+            processor.connect(audioContext.destination);
+
+            // 处理音频数据
+            processor.onaudioprocess = (e) => {
+                if (websocket.readyState === WebSocket.OPEN) {
+                    // 获取音频数据
+                    const inputData = e.inputBuffer.getChannelData(0);
+
+                    // 转换为16位整数
+                    const pcmData = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 0x7FFF));
+                    }
+
+                    // 累积音频数据
+                    accumulatedData.push(...pcmData);
+
+                    // 如果累积的数据达到 1 秒（16000 采样点），发送数据
+                    if (accumulatedData.length >= sampleRate) {
+                        const dataToSend = accumulatedData.slice(0, sampleRate);
+                        websocket.send(new Int16Array(dataToSend).buffer);
+                        accumulatedData = accumulatedData.slice(sampleRate);
+                    }
+                }
+            };
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+        } catch (err) {
+            console.error('Error:', err);
+            alert('启动录音失败: ' + err.message);
+        }
+    };
+
+    stopButton.onclick = () => {
+        if (processor) {
+            processor.disconnect();
+            input.disconnect();
+            audioContext.close();
+        }
+
+        if (websocket) {
+            websocket.send(JSON.stringify({command: 'stop'}));
+            websocket.close();
+        }
+
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    };
+    </script>
+</body>
+</html>

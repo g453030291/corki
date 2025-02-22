@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TTS Stream Test</title>
+</head>
+<body>
+    <!-- 输入区域 -->
+    <div>
+        <input type="text" id="inputText">
+        <button onclick="sendMessage()">发送</button>
+    </div>
+
+    <!-- 输出区域 -->
+    <div>
+        <textarea id="outputText" rows="10" cols="50" readonly></textarea>
+    </div>
+
+    <script>
+        // WebSocket连接
+        const ws = new WebSocket('ws://127.0.0.1:8000/test/tts_stream');
+
+        // 连接建立时的处理
+        ws.onopen = function() {
+            console.log('WebSocket连接已建立');
+        };
+
+        // 接收消息的处理
+        ws.onmessage = function(event) {
+            const output = document.getElementById('outputText');
+            // 将新接收的文本追加到已有文本后面
+            event = JSON.parse(event.data);
+            output.value += event.message;
+            // 自动滚动到底部
+            output.scrollTop = output.scrollHeight;
+        };
+
+        // 连接关闭时的处理
+        ws.onclose = function() {
+            console.log('WebSocket连接已关闭');
+        };
+
+        // 发生错误时的处理
+        ws.onerror = function(error) {
+            console.error('WebSocket错误:', error);
+        };
+
+        // 发送消息的函数
+        function sendMessage() {
+            const input = document.getElementById('inputText');
+            const text = input.value.trim();
+
+            if (text) {
+                ws.send(text);
+                // 清空输入框
+                input.value = '';
+            }
+        }
+
+        // 添加输入框的回车键监听
+        document.getElementById('inputText').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
