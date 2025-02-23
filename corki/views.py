@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 
+from django.db import connections
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
@@ -91,3 +92,19 @@ def conversation_init(request):
     :return:
     """
     return response_util.success(conversation_service.conversation_init())
+
+@csrf_exempt
+def health_liveness(request):
+    return response_util.success("OK")
+
+@csrf_exempt
+def health_readiness(request):
+    try:
+        # 尝试连接数据库
+        for conn in connections.all():
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        return response_util.error("Database connection failed", 500)
+    return response_util.success("OK")

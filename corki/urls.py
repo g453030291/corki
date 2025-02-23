@@ -29,6 +29,10 @@ from corki.ws_views.tts_stream import TTSStreamWsConsumer
 urlpatterns = [
     path("admin/", admin.site.urls),
 
+    # health
+    path("api/health/liveness", views.health_liveness, name="health-liveness"),
+    path("api/health/readiness", views.health_readiness, name="health-readiness"),
+
     # user
     path("api/user/", views.get_user, name="get-user"),
 
