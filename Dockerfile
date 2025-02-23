@@ -7,9 +7,8 @@ WORKDIR /app
 # Copy the requirements file into the container
 COPY requirements.txt .
 
-# Install opencv dependencies and any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install Python packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

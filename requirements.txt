@@ -16,3 +16,4 @@ pydub==0.25.1
 loguru==0.7.2
 volcengine-python-sdk==1.0.122
 oss2==2.19.1
+aiofiles==24.1.0
