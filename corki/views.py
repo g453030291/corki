@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.core.files.storage import default_storage
 
+from corki.client.oss_client import OSSClient
 from corki.models.user import CUser
 from corki.service import conversation_service
 from corki.util import response_util
@@ -108,3 +109,19 @@ def health_readiness(request):
     except Exception:
         return response_util.error("Database connection failed", 500)
     return response_util.success("OK")
+
+
+@csrf_exempt
+def upload_file(request):
+    """
+    上传文件
+    :param request:
+    :return:
+    """
+    oss_client = OSSClient()
+    file = request.FILES.get('file')
+    if file:
+        file_name = f"{uuid.uuid4().hex}{os.path.splitext(file.name)[1]}"
+        url = oss_client.put_object(file_name, file.read())
+        return response_util.success({'url': url})
+    return None

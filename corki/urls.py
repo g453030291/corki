@@ -49,6 +49,9 @@ urlpatterns = [
 
     # release api
     path("api/conversation_init", views.conversation_init, name="conversation-init"),
+
+    # file
+    path("api/upload", views.upload_file, name="upload-file"),
 ]
 
 websocket_urlpatterns = [
