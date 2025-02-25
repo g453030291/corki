@@ -132,12 +132,12 @@ def completions_by_key(key, system_prompts, user_prompts="和我打个招呼吧"
 
     return completion_response
 
-def conversation_init():
+def conversation_init(cv, jd):
     oss_client = OSSClient()
     # 1.获取当前初始对话的CV/JD
     completion_response = doubao_client.completions(
         system_prompts=system_prompt_content,
-        user_prompts=f"user_profile:\n{test_cv}\n,job_information:\n{test_jd}"
+        user_prompts=f"user_profile:\n{cv}\n,job_information:\n{jd}"
     )
     interview_record = InterviewRecord.objects.create(user_id=1, cv_id=1, jd_id=1)
     # 2.调用LLM API生成问题

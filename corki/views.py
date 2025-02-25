@@ -85,14 +85,17 @@ def stt_test(request):
     response = StreamingHttpResponse(stream_results(), content_type="application/json")
     return response
 
-
+@csrf_exempt
+@require_POST
 def conversation_init(request):
+    cv = request.POST.get('cv', '') or conversation_service.test_cv
+    jd = request.POST.get('jd', '') or conversation_service.test_jd
     """
     初始化问题和语音
     :param request:
     :return:
     """
-    return response_util.success(conversation_service.conversation_init())
+    return response_util.success(conversation_service.conversation_init(cv, jd))
 
 @csrf_exempt
 def health_liveness(request):
