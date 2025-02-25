@@ -123,15 +123,17 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                 definite_text = result['payload_msg']['result']['utterances'][0]['text']
                 logger.info(f"豆包分句: {definite_text}")
                 self.answer_content += definite_text
-                if self.answer_stop_flag >= 5:
-                    await self.get_next_step(self.interview_record.id, self.interview_question.id, definite_text)
-                    await self.send(text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
         if 'payload_msg' in result and 'text' in result['payload_msg']['result']:
             content_text = result['payload_msg']['result']['text']
             logger.info(f"豆包识别结果: {content_text}")
             if self.answer_content and len(content_text) == 0:
                 self.answer_stop_flag += 1
-            await self.send(text_data=response_util.success('voice bytes received', True))
+            if self.answer_stop_flag >= 5:
+                await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
+                await self.send(
+                    text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
+            else:
+                await self.send(text_data=response_util.success('voice bytes received', True))
         else:
             logger.info(f"Error parsing response: {json.dumps(result, indent=2, ensure_ascii=False)}")
 

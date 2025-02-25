@@ -28,7 +28,7 @@ class InterviewQuestion(models.Model):
     module = models.CharField(max_length=56, default='', null=False, help_text='问题类型')
     question_content = models.CharField(max_length=128, default='', null=False, help_text='问题内容')
     question_url = models.CharField(max_length=128, default='', null=False, help_text='问题语音 url')
-    answer_content = models.CharField(max_length=256, default='', null=False, help_text='回答内容')
+    answer_content = models.TextField(help_text='回答内容')
     created_at = models.DateTimeField(auto_now_add=True, null=False, help_text='创建时间')
     creator_id = models.IntegerField(default=0, null=False, help_text='创建人 ID')
     creator_name = models.CharField(max_length=255, default='', null=False, help_text='创建账户名')
