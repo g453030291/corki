@@ -88,8 +88,9 @@ def stt_test(request):
 @csrf_exempt
 @require_POST
 def conversation_init(request):
-    cv = request.POST.get('cv', '') or conversation_service.test_cv
-    jd = request.POST.get('jd', '') or conversation_service.test_jd
+    data = json.loads(request.body)
+    cv = data.get('cv', '') or conversation_service.test_cv
+    jd = data.get('jd', '') or conversation_service.test_jd
     """
     初始化问题和语音
     :param request:
