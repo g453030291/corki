@@ -35,6 +35,8 @@ urlpatterns = [
 
     # user
     path("api/user/", views.get_user, name="get-user"),
+    path("api/user/cv_upload", views.cv_upload, name="cv-upload"),
+    path("api/user/jd_upload", views.jd_upload, name="jd-upload"),
 
     # home
     path("home", views.home_page, name="home-page"),

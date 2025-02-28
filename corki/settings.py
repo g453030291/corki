@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from sympy import false
 
 load_dotenv()
 
@@ -44,7 +45,28 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corki",
     "channels",
+    "rest_framework",
+    "rest_framework_simplejwt",
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # 使用 JWT 认证
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # 默认所有接口需要登录
+    ],
+}
+
+# JWT 配置
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Access Token 有效期
+    'REFRESH_TOKEN_LIFETIME': None,     # Refresh Token 有效期
+    'ROTATE_REFRESH_TOKENS': False,                  # 刷新 Refresh Token
+    'BLACKLIST_AFTER_ROTATION': False,               # 刷新后旧 Token 加入黑名单
+}
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

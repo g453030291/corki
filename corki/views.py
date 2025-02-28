@@ -12,9 +12,10 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 
 from corki.client.oss_client import OSSClient
-from corki.models.user import CUser
-from corki.service import conversation_service
+from corki.models.user import CUser, UserCV, UserJD
+from corki.service import conversation_service, user_service
 from corki.util import response_util
+from corki.util.thread_pool import submit_task
 from corki.ws_views import stt_api
 
 
@@ -129,3 +130,19 @@ def upload_file(request):
         url = oss_client.put_object(file_name, file.read())
         return response_util.success({'url': url})
     return None
+
+@csrf_exempt
+def cv_upload(request):
+    data = json.loads(request.body)
+    cv_url = data.get('cv_url')
+    user_cv = UserCV.objects.create(user_id=1, cv_url=cv_url)
+    submit_task(user_service.analysis_cv_jd, user_cv , None)
+    return response_util.success()
+
+@csrf_exempt
+def jd_upload(request):
+    data = json.loads(request.body)
+    jd_url = data.get('jd_url')
+    user_jd = UserJD.objects.create(user_id=1, jd_url=jd_url)
+    submit_task(user_service.analysis_cv_jd, None, user_jd)
+    return response_util.success()

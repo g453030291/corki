@@ -5,6 +5,7 @@ import uuid
 from concurrent.futures import wait
 
 import django
+from json_repair import json_repair
 from loguru import logger
 
 from corki.client import doubao_client, volcengine_client, oss_client
@@ -158,7 +159,8 @@ def follow_up_questions(question, answer):
         system_prompts=follow_up_prompt,
         user_prompts=f"question:\n{question}\n,answer:\n{answer}"
     )
-    completion_json = json.loads(completion_response.replace("```", "").replace("json", ""))
+    decoded_object = json_repair.loads(completion_response.replace("```", "").replace("json", ""))
+    completion_json = json.loads(decoded_object)
     return completion_json
 
 def process_audio(interview_question, oss_client):
