@@ -26,7 +26,8 @@ class RequestUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return resp_util.success(request.user)
+        user_json = CUser.get_serializer()(request.user).data
+        return resp_util.success(user_json)
 
 
 class CVUpload(APIView):

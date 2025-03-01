@@ -1,7 +1,6 @@
 from django.db import models
 from rest_framework import serializers
 
-
 class CUser(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, default='', null=False, help_text='用户名')
@@ -16,6 +15,8 @@ class CUser(models.Model):
     updater_name = models.CharField(max_length=255, default='', null=False, help_text='更新账户名')
     deleted = models.IntegerField(default=0, null=False, help_text='删除标识:0=未删除,1=已删除')
 
+    is_authenticated = True
+
     class Meta:
         managed = False
         db_table = 'c_users'
@@ -26,7 +27,6 @@ class CUser(models.Model):
             class Meta:
                 model = CUser
                 fields = '__all__'
-
         return CUserSerializer
 
 class UserCV(models.Model):

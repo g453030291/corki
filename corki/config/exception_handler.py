@@ -1,5 +1,5 @@
 from rest_framework.views import exception_handler
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, AuthenticationFailed
 from rest_framework import status
 
 from corki.util import resp_util
@@ -13,5 +13,9 @@ def auth_exception_handler(exc, context):
                                'Authentication credentials were not provided.',
                                as_string=False,
                                error_status=status.HTTP_401_UNAUTHORIZED)
-
+    if isinstance(exc, AuthenticationFailed):
+        return resp_util.error(401,
+                               'Authentication failed.',
+                               as_string=False,
+                               error_status=status.HTTP_401_UNAUTHORIZED)
     return response
