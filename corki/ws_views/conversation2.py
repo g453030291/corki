@@ -12,7 +12,7 @@ from loguru import logger
 from corki.client.oss_client import OSSClient
 from corki.models.interview import InterviewQuestion, InterviewRecord
 from corki.service import conversation_service
-from corki.util import volcengine_util, response_util
+from corki.util import volcengine_util, resp_util
 from corki.util.thread_pool import submit_task
 
 
@@ -39,7 +39,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await self.accept()
         logger.info(f"New connection established - Channel Name: {self.channel_name}")
         await self.sauc_init()
-        await self.send(text_data=response_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
+        await self.send(text_data=resp_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
 
     async def disconnect(self, close_code):
         await self.sauc_ws_client.close()
@@ -61,9 +61,9 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                         question_status=0
                     ).order_by('id').first()
                 )()
-                await self.send(text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
+                await self.send(text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
             else:
-                await self.send(response_util.error('99', 'Unknown operation type', True))
+                await self.send(resp_util.error('99', 'Unknown operation type', True))
         if bytes_data:
             await self.process_voice_bytes(bytes_data)
 
@@ -131,9 +131,9 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             if self.answer_stop_flag >= 5:
                 await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
                 await self.send(
-                    text_data=response_util.success({'question_url': self.interview_question.question_url}, True))
+                    text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
             else:
-                await self.send(text_data=response_util.success('voice bytes received', True))
+                await self.send(text_data=resp_util.success('voice bytes received', True))
         else:
             logger.info(f"Error parsing response: {json.dumps(result, indent=2, ensure_ascii=False)}")
 

@@ -14,26 +14,16 @@ from django.core.files.storage import default_storage
 from corki.client.oss_client import OSSClient
 from corki.models.user import CUser, UserCV, UserJD
 from corki.service import conversation_service, user_service
-from corki.util import response_util
+from corki.util import resp_util
 from corki.util.thread_pool import submit_task
 from corki.ws_views import stt_api
 
 
 def get_user(request):
-    return response_util.success(list(CUser.objects.all().values_list()))
-
-def home_page(request):
-    return render(request, 'home.html')
-
-def home2_page(request):
-    return render(request, 'home2.html')
+    return resp_util.success(list(CUser.objects.all().values_list()))
 
 def home3_page(request):
     return render(request, 'home3.html')
-
-def conversation_page(request):
-    return render(request, 'conversation.html')
-
 
 @csrf_exempt
 @require_POST
@@ -85,64 +75,3 @@ def stt_test(request):
     # If your Django project is purely WSGI, you'd adapt to a synchronous approach.
     response = StreamingHttpResponse(stream_results(), content_type="application/json")
     return response
-
-@csrf_exempt
-@require_POST
-def conversation_init(request):
-    data = json.loads(request.body)
-    cv = data.get('cv', '') or conversation_service.test_cv
-    jd = data.get('jd', '') or conversation_service.test_jd
-    """
-    初始化问题和语音
-    :param request:
-    :return:
-    """
-    return response_util.success(conversation_service.conversation_init(cv, jd))
-
-@csrf_exempt
-def health_liveness(request):
-    return response_util.success("OK")
-
-@csrf_exempt
-def health_readiness(request):
-    try:
-        # 尝试连接数据库
-        for conn in connections.all():
-            cursor = conn.cursor()
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-    except Exception:
-        return response_util.error("Database connection failed", 500)
-    return response_util.success("OK")
-
-
-@csrf_exempt
-def upload_file(request):
-    """
-    上传文件
-    :param request:
-    :return:
-    """
-    oss_client = OSSClient()
-    file = request.FILES.get('file')
-    if file:
-        file_name = f"{uuid.uuid4().hex}{os.path.splitext(file.name)[1]}"
-        url = oss_client.put_object(file_name, file.read())
-        return response_util.success({'url': url})
-    return None
-
-@csrf_exempt
-def cv_upload(request):
-    data = json.loads(request.body)
-    cv_url = data.get('cv_url')
-    user_cv = UserCV.objects.create(user_id=1, cv_url=cv_url)
-    submit_task(user_service.analysis_cv_jd, user_cv , None)
-    return response_util.success()
-
-@csrf_exempt
-def jd_upload(request):
-    data = json.loads(request.body)
-    jd_url = data.get('jd_url')
-    user_jd = UserJD.objects.create(user_id=1, jd_url=jd_url)
-    submit_task(user_service.analysis_cv_jd, None, user_jd)
-    return response_util.success()

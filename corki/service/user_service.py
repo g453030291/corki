@@ -25,6 +25,7 @@ def analysis_cv_jd(user_cv: UserCV, user_jd: UserJD):
         file_util.download_file(path, url)
         text = pdf_util.extract_text_from_pdf(path)
         UserCV.objects.filter(id=user_cv.id).update(cv_content=text)
+        os.remove(path)
         logger.info(f"cv解析完成:id={user_cv.id}")
     elif user_jd:
         url = user_jd.jd_url
@@ -32,6 +33,7 @@ def analysis_cv_jd(user_cv: UserCV, user_jd: UserJD):
         file_util.download_file(path, url)
         text = ocr_util.extract_text_from_image(path)
         UserJD.objects.filter(id=user_jd.id).update(jd_content=text)
+        os.remove(path)
         logger.info(f"jd解析完成:id={user_jd.id}")
     else:
         logger.info("cv/jd不存在")

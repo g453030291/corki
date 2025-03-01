@@ -19,6 +19,11 @@ from django.contrib import admin
 from django.urls import path
 
 from corki import views
+from corki.api_views.conversation_views import ConversationInit
+from corki.api_views.file_views import FileViews
+from corki.api_views.health_views import LivenessViews, ReadinessViews
+from corki.api_views.user_views import CVUpload, JDUpload, Login, RequestUser
+from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
 from corki.ws_views.stt_ws import STTStreamWsConsumer
@@ -30,38 +35,34 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # health
-    path("api/health/liveness", views.health_liveness, name="health-liveness"),
-    path("api/health/readiness", views.health_readiness, name="health-readiness"),
+    path("api/health/liveness", LivenessViews.as_view(), name="health-liveness"),
+    path("api/health/readiness", ReadinessViews.as_view(), name="health-readiness"),
 
     # user
-    path("api/user/", views.get_user, name="get-user"),
-    path("api/user/cv_upload", views.cv_upload, name="cv-upload"),
-    path("api/user/jd_upload", views.jd_upload, name="jd-upload"),
+    path("api/user/login", Login.as_view(), name="user-login"),
+    path("api/user/request", RequestUser.as_view(), name="request-user"),
+    path("api/user/cv_upload", CVUpload.as_view(), name="cv-upload"),
+    path("api/user/jd_upload", JDUpload.as_view(), name="jd-upload"),
 
     # home
-    path("home", views.home_page, name="home-page"),
-    path("home2", views.home2_page, name="home-page2"),
-    path("home3", views.home3_page, name="home-page3"),
-
-    # page
-    path("conversation", views.conversation_page, name="conversation-page"),
+    path("home3", Home3.as_view(), name="home-page3"),
 
     # stt
-    path("api/stt", views.stt_test, name="stt"),
+    # path("api/stt", views.stt_test, name="stt"),
 
     # release api
-    path("api/conversation_init", views.conversation_init, name="conversation-init"),
+    path("api/conversation_init", ConversationInit.as_view(), name="conversation-init"),
 
     # file
-    path("api/upload", views.upload_file, name="upload-file"),
+    path("api/upload", FileViews.as_view(), name="file-upload"),
 ]
 
 websocket_urlpatterns = [
     # test
-    path("test/", WsConsumer.as_asgi()),
-    path("test/tts", TTSAndTestWsConsumer.as_asgi()),
-    path("test/stt", STTStreamWsConsumer.as_asgi()),
-    path("test/tts_stream", TTSStreamWsConsumer.as_asgi()),
-    path("conversation", ConversationStreamWsConsumer.as_asgi()),
+    # path("test/", WsConsumer.as_asgi()),
+    # path("test/tts", TTSAndTestWsConsumer.as_asgi()),
+    # path("test/stt", STTStreamWsConsumer.as_asgi()),
+    # path("test/tts_stream", TTSStreamWsConsumer.as_asgi()),
+    # path("conversation", ConversationStreamWsConsumer.as_asgi()),
     path("conversation2", ConversationStreamWsConsumer2.as_asgi()),
 ]

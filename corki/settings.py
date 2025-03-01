@@ -56,6 +56,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # 默认所有接口需要登录
     ],
+    'EXCEPTION_HANDLER': 'corki.config.exception_handler.auth_exception_handler'
 }
 
 # JWT 配置
