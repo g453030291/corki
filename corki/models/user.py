@@ -4,7 +4,7 @@ from rest_framework import serializers
 class CUser(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, default='', null=False, help_text='用户名')
-    phone = models.CharField(max_length=20, default='', null=False, help_text='手机号')
+    phone = models.CharField(max_length=20, default='', null=False, help_text='手机号', unique=True)
     email = models.CharField(max_length=255, default='', null=False, help_text='邮箱')
     available_seconds = models.IntegerField(default=0, null=False, help_text='剩余用时,秒')
     created_at = models.DateTimeField(auto_now_add=True, null=False, help_text='创建时间')
