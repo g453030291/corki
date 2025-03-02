@@ -38,7 +38,7 @@ class Login(APIView):
         if user is None:
             user = CUser.objects.create(phone=phone_number)
         access_token = AccessToken.for_user(user)
-        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=3600)
+        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=60 * 60 * 24 * 30)
         return resp_util.success({'access_token': str(access_token)})
 
 class RequestUser(APIView):

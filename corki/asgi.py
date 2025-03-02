@@ -14,13 +14,15 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 
+from corki.config.ws_auth import WSAuthMiddleware
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "corki.settings")
 django.setup()
 
 import corki.urls
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
+    "websocket": WSAuthMiddleware(
         URLRouter(
             corki.urls.websocket_urlpatterns
         )

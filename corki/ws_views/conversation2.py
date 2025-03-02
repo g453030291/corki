@@ -8,6 +8,8 @@ import websockets
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from loguru import logger
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import AllowAny
 
 from corki.client.oss_client import OSSClient
 from corki.models.interview import InterviewQuestion, InterviewRecord
@@ -34,6 +36,8 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
 
 
     async def connect(self):
+        # 权限校验
+        await self.permission_check()
         # 初始化连接要取到 interview id
         logger.info(f"Incoming connection from {self.scope['client'][0]} on path {self.scope['path']}")
         await self.accept()
@@ -67,6 +71,17 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         if bytes_data:
             await self.process_voice_bytes(bytes_data)
 
+    async def permission_check(self):
+        query_string = self.scope.get("query_string", b"").decode("utf-8")
+        query_params = dict(param.split('=') for param in query_string.split('&') if param)
+
+        # 获取 token
+        token = query_params.get("token")
+        print(token)
+        if not token:
+            # 如果没有提供 token，拒绝连接
+            await self.close(code=4001)
+            return
 
     async def sauc_init(self):
         # 1. 建立连接
