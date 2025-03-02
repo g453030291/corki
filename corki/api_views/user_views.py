@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from corki.models.user import UserCV, CUser
+from corki.models.user import UserCV, CUser, UserJD
 from corki.service import user_service
 from corki.util import resp_util
 from corki.util.thread_pool import submit_task
@@ -49,18 +49,30 @@ class RequestUser(APIView):
         return resp_util.success(user_json)
 
 
-class CVUpload(APIView):
+class CV(APIView):
+    def get(self, request):
+        user_cv_list = UserCV.objects.filter(user_id=request.user.id, deleted=0).all()
+        serializer_class = UserCV.get_serializer()
+        serializer = serializer_class(user_cv_list, many=True)
+        return resp_util.success(serializer.data)
+
     def post(self, request):
         data = json.loads(request.body)
         cv_url = data.get('cv_url')
-        user_cv = UserCV.objects.create(user_id=1, cv_url=cv_url)
+        user_cv = UserCV.objects.create(user_id=request.user.id, cv_url=cv_url)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
 
-class JDUpload(APIView):
+class JD(APIView):
+    def get(self, request):
+        user_jd_list = UserJD.objects.filter(user_id=request.user.id, deleted=0).all()
+        serializer_class = UserJD.get_serializer()
+        serializer = serializer_class(user_jd_list, many=True)
+        return resp_util.success(serializer.data)
+
     def post(self, request):
         data = json.loads(request.body)
         jd_url = data.get('jd_url')
-        user_jd = UserCV.objects.create(user_id=1, jd_url=jd_url)
+        user_jd = UserJD.objects.create(user_id=request.user.id, jd_url=jd_url)
         submit_task(user_service.analysis_cv_jd, None, user_jd)
         return resp_util.success()

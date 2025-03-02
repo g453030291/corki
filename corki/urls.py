@@ -23,7 +23,7 @@ from corki.api_views import empty_views
 from corki.api_views.conversation_views import ConversationInit
 from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
-from corki.api_views.user_views import CVUpload, JDUpload, Login, RequestUser, SendCode
+from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -45,8 +45,8 @@ urlpatterns = [
     path("api/user/send_code", SendCode.as_view(), name="send-code"),
     path("api/user/login", Login.as_view(), name="user-login"),
     path("api/user/request", RequestUser.as_view(), name="request-user"),
-    path("api/user/cv_upload", CVUpload.as_view(), name="cv-upload"),
-    path("api/user/jd_upload", JDUpload.as_view(), name="jd-upload"),
+    path("api/user/cv", CV.as_view(), name="cv-upload"),
+    path("api/user/jd", JD.as_view(), name="jd-upload"),
 
     # home
     path("home3", Home3.as_view(), name="home-page3"),

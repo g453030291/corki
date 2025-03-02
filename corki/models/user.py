@@ -48,6 +48,14 @@ class UserCV(models.Model):
         verbose_name = '用户简历表'
         verbose_name_plural = '用户简历表'
 
+    @staticmethod
+    def get_serializer():
+        class UserCVSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = UserCV
+                fields = 'id', 'user_id', 'cv_url', 'created_at'
+        return UserCVSerializer
+
 class UserJD(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(default=0, null=False, help_text='用户 ID')
@@ -66,3 +74,11 @@ class UserJD(models.Model):
         db_table = 'user_jd'
         verbose_name = '用户简历表'
         verbose_name_plural = '用户简历表'
+
+    @staticmethod
+    def get_serializer():
+        class UserJDSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = UserJD
+                fields = 'id', 'user_id', 'jd_url', 'created_at'
+        return UserJDSerializer
