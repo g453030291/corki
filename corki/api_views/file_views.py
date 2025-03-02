@@ -21,5 +21,5 @@ class FileViews(APIView):
         if file:
             file_name = f"{uuid.uuid4().hex}{os.path.splitext(file.name)[1]}"
             url = oss_client.put_object(file_name, file.read())
-            return response_util.success({'url': url})
-        return None
+            return resp_util.success({'url': url})
+        return resp_util.error(500, '上传文件失败')

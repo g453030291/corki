@@ -27,11 +27,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-&xm1ffsf8gz-koxpbia48z!ld3ys4x_!n9ecdarow8@t$r!p+)"
 
+cluster_str = os.getenv('CLUSTER')
+IS_PROD = cluster_str == 'prod'
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = IS_PROD
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 

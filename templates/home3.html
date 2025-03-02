@@ -9,6 +9,7 @@
     <div>
         <button onclick="wsConnection()">连接</button>
         <input type="text" id="interview_id" placeholder="请输入会话ID">
+        <input type="text" id="token" placeholder="请输入token">
     </div>
     <div>
         <audio id="ttsPlayer" controls></audio>
@@ -74,7 +75,7 @@
 
                 // 2. 开始连接后端 ws 接口
                 {#ws = new WebSocket('wss://www.ointerview.com/conversation2');#}
-                ws = new WebSocket('ws://localhost:8000/conversation2?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQxNDg1MzQ1LCJpYXQiOjE3NDA4ODA1NDUsImp0aSI6IjVkMzQwN2FkMTAwNzQxODhhMTU0MDg3ZDEzMTc4MTU3IiwidXNlcl9pZCI6Mn0.QVou19Ker3f85GZUIAHuLZwLAn5cMb43-KB7wzzzoeQ1');
+                ws = new WebSocket('ws://localhost:8000/conversation2?token=' + document.getElementById('token').value);
 
                 ws.onopen = function() {
                     console.log('连接成功');

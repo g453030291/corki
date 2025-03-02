@@ -14,11 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
+from django.conf.urls import handler404
 from django.contrib import admin
 from django.urls import path
 
 from corki import views
+from corki.api_views import empty_views
 from corki.api_views.conversation_views import ConversationInit
 from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
@@ -30,6 +31,8 @@ from corki.ws_views.stt_ws import STTStreamWsConsumer
 from corki.ws_views.test import WsConsumer
 from corki.ws_views.tts import TTSAndTestWsConsumer
 from corki.ws_views.tts_stream import TTSStreamWsConsumer
+
+handler404 = empty_views.custom_404
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
