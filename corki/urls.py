@@ -22,7 +22,7 @@ from corki import views
 from corki.api_views.conversation_views import ConversationInit
 from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
-from corki.api_views.user_views import CVUpload, JDUpload, Login, RequestUser
+from corki.api_views.user_views import CVUpload, JDUpload, Login, RequestUser, SendCode
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -32,13 +32,14 @@ from corki.ws_views.tts import TTSAndTestWsConsumer
 from corki.ws_views.tts_stream import TTSStreamWsConsumer
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    # path("admin/", admin.site.urls),
 
     # health
     path("api/health/liveness", LivenessViews.as_view(), name="health-liveness"),
     path("api/health/readiness", ReadinessViews.as_view(), name="health-readiness"),
 
     # user
+    path("api/user/send_code", SendCode.as_view(), name="send-code"),
     path("api/user/login", Login.as_view(), name="user-login"),
     path("api/user/request", RequestUser.as_view(), name="request-user"),
     path("api/user/cv_upload", CVUpload.as_view(), name="cv-upload"),

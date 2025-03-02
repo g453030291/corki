@@ -1,4 +1,5 @@
 import json
+import random
 
 from django.core.cache import cache
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,14 +11,32 @@ from corki.service import user_service
 from corki.util import resp_util
 from corki.util.thread_pool import submit_task
 
+class SendCode(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = json.loads(request.body)
+        phone = data['phone']
+        # 生成 4 位验证码
+        verification_code = random.randint(1000, 9999)
+        # 将验证码存入缓存
+        cache.set(phone, verification_code, timeout=300)
+        return resp_util.success({'verification_code': verification_code})
+
 class Login(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         data = json.loads(request.body)
-        user = CUser.objects.filter(phone=data['phone']).first()
+        phone_number = data['phone']
+        code = data['verification_code']
+        cache_code = cache.get(phone_number)
+        if code != cache_code:
+            return resp_util.error(500, '验证码错误')
+        cache.delete(phone_number)
+        user = CUser.objects.filter(phone=phone_number).first()
         if user is None:
-            user = CUser.objects.create(phone=data['phone'])
+            user = CUser.objects.create(phone=phone_number)
         access_token = AccessToken.for_user(user)
         cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=3600)
         return resp_util.success({'access_token': str(access_token)})
