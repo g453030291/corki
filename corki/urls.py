@@ -23,6 +23,7 @@ from corki.api_views import empty_views
 from corki.api_views.conversation_views import ConversationInit
 from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
+from corki.api_views.short_url_views import ShortUrlView
 from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
@@ -59,6 +60,9 @@ urlpatterns = [
 
     # file
     path("api/upload", FileViews.as_view(), name="file-upload"),
+
+    # short url
+    path("api/short_url", ShortUrlView.as_view(), name="short-url"),
 ]
 
 websocket_urlpatterns = [

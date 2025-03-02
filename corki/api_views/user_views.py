@@ -63,6 +63,14 @@ class CV(APIView):
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
 
+    def put(self, request):
+        data = json.loads(request.body)
+        cv_id = data.get('cv_id')
+        default_status = data.get('default_status')
+        UserCV.objects.filter(id=cv_id).update(default_status=default_status)
+        UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
+        return resp_util.success()
+
 class JD(APIView):
     def get(self, request):
         user_jd_list = UserJD.objects.filter(user_id=request.user.id, deleted=0).all()
@@ -75,4 +83,12 @@ class JD(APIView):
         jd_url = data.get('jd_url')
         user_jd = UserJD.objects.create(user_id=request.user.id, jd_url=jd_url)
         submit_task(user_service.analysis_cv_jd, None, user_jd)
+        return resp_util.success()
+
+    def put(self, request):
+        data = json.loads(request.body)
+        jd_id = data.get('jd_id')
+        default_status = data.get('default_status')
+        UserJD.objects.filter(id=jd_id).update(default_status=default_status)
+        UserJD.objects.filter(user_id=request.user.id).exclude(id=jd_id).update(default_status=0)
         return resp_util.success()

@@ -32,6 +32,7 @@ class CUser(models.Model):
 class UserCV(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(default=0, null=False, help_text='用户 ID')
+    default_status = models.IntegerField(default=0, null=False, help_text='默认状态:0=非默认,1=默认')
     cv_url = models.CharField(max_length=128, default='', null=False, help_text='简历地址')
     cv_content = models.TextField(null=True, help_text='简历内容')
     created_at = models.DateTimeField(auto_now_add=True, null=False, help_text='创建时间')
@@ -53,12 +54,13 @@ class UserCV(models.Model):
         class UserCVSerializer(serializers.ModelSerializer):
             class Meta:
                 model = UserCV
-                fields = 'id', 'user_id', 'cv_url', 'created_at'
+                fields = 'id', 'user_id', 'default_status', 'cv_url', 'created_at'
         return UserCVSerializer
 
 class UserJD(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(default=0, null=False, help_text='用户 ID')
+    default_status = models.IntegerField(default=0, null=False, help_text='默认状态:0=非默认,1=默认')
     jd_url = models.CharField(max_length=128, default='', null=False, help_text='简历地址')
     jd_content = models.TextField(null=True, help_text='简历内容')
     created_at = models.DateTimeField(auto_now_add=True, null=False, help_text='创建时间')
@@ -80,5 +82,5 @@ class UserJD(models.Model):
         class UserJDSerializer(serializers.ModelSerializer):
             class Meta:
                 model = UserJD
-                fields = 'id', 'user_id', 'jd_url', 'created_at'
+                fields = 'id', 'user_id', 'default_status', 'jd_url', 'created_at'
         return UserJDSerializer

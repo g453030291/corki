@@ -160,8 +160,8 @@ def follow_up_questions(question, answer):
         user_prompts=f"question:\n{question}\n,answer:\n{answer}"
     )
     decoded_object = json_repair.loads(completion_response.replace("```", "").replace("json", ""))
-    completion_json = json.loads(decoded_object)
-    return completion_json
+    # completion_json = json.loads(decoded_object)
+    return decoded_object
 
 def process_audio(interview_question, oss_client):
     """
