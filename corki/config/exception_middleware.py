@@ -1,7 +1,7 @@
-import traceback
-
 from django.http import JsonResponse
 from loguru import logger
+import traceback
+
 
 class GlobalExceptionMiddleware:
     def __init__(self, get_response):
@@ -10,6 +10,15 @@ class GlobalExceptionMiddleware:
     def __call__(self, request):
         try:
             response = self.get_response(request)
+
+            # Interceptar respuestas de error de método HTTP
+            if response.status_code == 405:  # Method Not Allowed
+                return JsonResponse({
+                    'code': 405,
+                    'message': 'Method not allowed',
+                    'data': None
+                }, status=405)
+
             return response
         except Exception as e:
             logger.exception(traceback.format_exc())

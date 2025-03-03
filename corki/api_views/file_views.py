@@ -1,7 +1,8 @@
 import os
 import uuid
 
-from rest_framework.permissions import AllowAny
+from django.core.cache import cache
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from corki.client.oss_client import OSSClient

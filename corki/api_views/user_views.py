@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
+from corki.client.oss_client import OSSClient
 from corki.models.user import UserCV, CUser, UserJD
 from corki.service import user_service
 from corki.util import resp_util
@@ -50,12 +51,6 @@ class RequestUser(APIView):
 
 
 class CV(APIView):
-    def get(self, request):
-        user_cv_list = UserCV.objects.filter(user_id=request.user.id, deleted=0).all()
-        serializer_class = UserCV.get_serializer()
-        serializer = serializer_class(user_cv_list, many=True)
-        return resp_util.success(serializer.data)
-
     def post(self, request):
         data = json.loads(request.body)
         cv_url = data.get('cv_url')
@@ -71,13 +66,23 @@ class CV(APIView):
         UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
         return resp_util.success()
 
-class JD(APIView):
-    def get(self, request):
-        user_jd_list = UserJD.objects.filter(user_id=request.user.id, deleted=0).all()
-        serializer_class = UserJD.get_serializer()
-        serializer = serializer_class(user_jd_list, many=True)
+class CVList(APIView):
+    def post(self, request):
+        data = json.loads(request.body)
+        default_status = data.get('default_status')
+        new_one = data.get('new_one')
+        query_params = {'user_id': request.user.id, 'deleted': 0}
+        if default_status is not None:
+            query_params['default_status'] = default_status
+        if new_one == 1:
+            user_cv_list = UserCV.objects.filter(**query_params).all()
+        else:
+            user_cv_list = UserCV.objects.filter(**query_params).order_by('-id')[:1]
+        serializer_class = UserCV.get_serializer()
+        serializer = serializer_class(user_cv_list, many=True)
         return resp_util.success(serializer.data)
 
+class JD(APIView):
     def post(self, request):
         data = json.loads(request.body)
         jd_url = data.get('jd_url')
@@ -91,4 +96,35 @@ class JD(APIView):
         default_status = data.get('default_status')
         UserJD.objects.filter(id=jd_id).update(default_status=default_status)
         UserJD.objects.filter(user_id=request.user.id).exclude(id=jd_id).update(default_status=0)
+        return resp_util.success()
+
+class JDList(APIView):
+    def post(self, request):
+        data = json.loads(request.body)
+        default_status = data.get('default_status')
+        new_one = data.get('new_one')
+        query_params = {'user_id': request.user.id, 'deleted': 0}
+        if default_status is not None:
+            query_params['default_status'] = default_status
+        if new_one == 1:
+            user_jd_list = UserJD.objects.filter(**query_params).all()
+        else:
+            user_jd_list = UserJD.objects.filter(**query_params).order_by('-id')[:1]
+        serializer_class = UserJD.get_serializer()
+        serializer = serializer_class(user_jd_list, many=True)
+        return resp_util.success(serializer.data)
+
+class PCUploadCV(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = json.loads(request.body)
+        token = data.get('token')
+        if token is None or not cache.has_key(token):
+            return resp_util.error(500, 'token 无效')
+        user_id = cache.get(token)
+        cv_url = data.get('cv_url')
+        user_cv = UserCV.objects.create(user_id=user_id, cv_url=cv_url)
+        cache.delete(token)
+        submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
