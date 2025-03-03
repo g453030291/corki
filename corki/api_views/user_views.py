@@ -61,9 +61,22 @@ class CV(APIView):
     def put(self, request):
         data = json.loads(request.body)
         cv_id = data.get('cv_id')
-        default_status = data.get('default_status')
-        UserCV.objects.filter(id=cv_id).update(default_status=default_status)
-        UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
+
+        # Prepare update fields dictionary
+        update_fields = {}
+        if 'default_status' in data:
+            update_fields['default_status'] = data.get('default_status')
+        if 'deleted' in data:
+            update_fields['deleted'] = data.get('deleted')
+
+        # Only update if there are fields to update
+        if update_fields:
+            UserCV.objects.filter(id=cv_id).update(**update_fields)
+
+            # If default_status is set to 1, update other records for this user
+            if data.get('default_status') == 1:
+                UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
+
         return resp_util.success()
 
 class CVList(APIView):
