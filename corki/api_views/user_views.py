@@ -56,11 +56,12 @@ class CV(APIView):
         cv_id = data.get('id')
 
         if cv_id:
-            # Update logic - only updating default_status
+            deleted = data.get('deleted', 0)
+            update_fields = {'deleted': deleted}
             if 'default_status' in data and data.get('default_status') == 1:
-                UserCV.objects.filter(id=cv_id).update(default_status=1)
-                # Reset other records for this user
+                update_fields['default_status'] = 1
                 UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
+            UserCV.objects.filter(id=cv_id).update(**update_fields)
         else:
             # Create new CV
             cv_url = data.get('cv_url')
@@ -94,6 +95,7 @@ class JD(APIView):
         jd_title = data.get('jd_title', '')
         jd_content = data.get('jd_content')
         default_status = data.get('default_status')
+        deleted = data.get('deleted', 0)
 
         # Build update fields dictionary
         fields = {}
@@ -105,6 +107,9 @@ class JD(APIView):
             fields['jd_content'] = jd_content
         if default_status is not None:
             fields['default_status'] = default_status
+        if deleted != 0:
+            fields['deleted'] = deleted
+
 
         # Update or create based on id existence
         if jd_id:
