@@ -25,7 +25,7 @@ from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
-from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList
+from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -49,6 +49,7 @@ urlpatterns = [
     path("api/user/request", RequestUser.as_view(), name="request-user"),
     path("api/user/cv", CV.as_view(), name="cv-upload"),
     path("api/user/cv_list", CVList.as_view(), name="cv-list"),
+    path("api/user/upload_cv", UploadCV.as_view(), name="upload-cv"),
     path("api/user/pc_upload_cv", PCUploadCV.as_view(), name="pc-upload-cv"),
     path("api/user/jd", JD.as_view(), name="jd-upload"),
     path("api/user/jd_list", JDList.as_view(), name="jd-list"),
