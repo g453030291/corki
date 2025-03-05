@@ -1,20 +1,24 @@
 import gzip
 import json
 import os
+import time
 import uuid
 from concurrent.futures import wait
 
 import websockets
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.core.cache import cache
 from loguru import logger
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
+from sympy import false
 
 from corki.client.oss_client import OSSClient
 from corki.models.interview import InterviewQuestion, InterviewRecord
+from corki.models.user import CUser
 from corki.service import conversation_service
-from corki.util import volcengine_util, resp_util
+from corki.util import volcengine_util, resp_util, timing_util
 from corki.util.thread_pool import submit_task
 
 
@@ -25,8 +29,11 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         self.oss_client = OSSClient()
         self.interview_record = None
         self.interview_question = None
+        self.user = None
         self.answer_content = ''
         self.answer_stop_flag = 0
+        self.available_seconds = 0
+        self.start_timestamp = 0
         # 语音识别
         self.sauc_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel"
         self.sauc_ws_client = None
@@ -43,7 +50,8 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await self.accept()
         logger.info(f"New connection established - Channel Name: {self.channel_name}")
         await self.sauc_init()
-        await self.send(text_data=resp_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
+        # await self.send(text_data=resp_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
+        await self.send(text_data=resp_util.success({'available_seconds': self.available_seconds, 'start_timestamp': self.start_timestamp}, True))
 
     async def disconnect(self, close_code):
         await self.sauc_ws_client.close()
@@ -66,6 +74,13 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                     ).order_by('id').first()
                 )()
                 await self.send(text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
+            elif text_data.get('operation_type') == 'stop':
+                over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+                updater = database_sync_to_async(CUser.objects.filter(id=self.user.id).update(available_seconds=over_time))
+                await updater()
+                await self.send(text_data=resp_util.error('500', '时长不足,请充值', True))
+                await self.close(code=4001, reason='时长不足,请充值')
+                return
             else:
                 await self.send(resp_util.error('99', 'Unknown operation type', True))
         if bytes_data:
@@ -77,11 +92,17 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
 
         # 获取 token
         token = query_params.get("token")
-        print(token)
         if not token:
             # 如果没有提供 token，拒绝连接
             await self.close(code=4001)
             return
+        cached_data = cache.get(token)
+        user = CUser(**cached_data)
+        self.user = user
+        user_available_seconds = await database_sync_to_async(
+            CUser.objects.filter(id=user.id).values('available_seconds').first)()
+        self.available_seconds = user_available_seconds['available_seconds']
+        self.start_timestamp = int(time.time())
 
     async def sauc_init(self):
         # 1. 建立连接
@@ -144,11 +165,14 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             if self.answer_content and len(content_text) == 0:
                 self.answer_stop_flag += 1
             if self.answer_stop_flag >= 5:
-                await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
+                stop_flag = await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
+                if stop_flag:
+                    logger.info(f"stop_flag:{stop_flag},时长不足,连接关闭")
+                    return
                 await self.send(
                     text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
             else:
-                await self.send(text_data=resp_util.success('voice bytes received', True))
+                await self.send(text_data=resp_util.voice_success({'available_seconds': timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)}))
         else:
             logger.info(f"Error parsing response: {json.dumps(result, indent=2, ensure_ascii=False)}")
 
@@ -161,10 +185,20 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
 
     # 判断当前对话进度和状态，给出下一步操作
     async def get_next_step(self, interview_id, question_id, answer_content):
+        stop_flag = False
         # 1. 保存用户回答
         update_operation = database_sync_to_async(
             InterviewQuestion.objects.filter(id=self.interview_question.id).update)
         await update_operation(answer_content=answer_content, question_status=1)
+
+        # 保存后先判断是否到时
+        if timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp) <= 0:
+            await self.send(text_data=resp_util.error('500', '时长不足,请充值', True))
+            await self.close(code=4001, reason='时长不足,请充值')
+            update_user = database_sync_to_async(CUser.objects.filter(id=self.user.id).update)
+            await update_user()
+            stop_flag = True
+            return stop_flag
 
         # 2. 判断当前问题层级
         if self.interview_question.question_type == 0:
@@ -201,3 +235,4 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         self.interview_question = new_question
         self.answer_content = ''
         self.answer_stop_flag = 0
+        return stop_flag
