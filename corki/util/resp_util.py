@@ -31,5 +31,5 @@ def error(code, msg, as_string=False, error_status=status.HTTP_500_INTERNAL_SERV
     response.msg = msg
     response_data = response.__dict__
     if as_string:
-        return json.dumps(response_data)
+        return json.dumps(response_data, ensure_ascii=False)
     return Response(response_data, status=error_status)

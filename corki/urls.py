@@ -63,6 +63,8 @@ urlpatterns = [
     # release api
     path("api/conversation_init", ConversationInit.as_view(), name="conversation-init"),
 
+    path("api/conversation_feedback", ConversationFeedback.as_view(), name="conversation-feedback"),
+
     # file
     path("api/upload", FileViews.as_view(), name="file-upload"),
 

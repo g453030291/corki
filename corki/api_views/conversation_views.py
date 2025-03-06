@@ -1,7 +1,9 @@
 import json
 
+from loguru import logger
 from rest_framework.views import APIView
 
+from corki.models.interview import InterviewQuestion
 from corki.models.user import UserCV, UserJD
 from corki.service import conversation_service
 from corki.util import resp_util
@@ -30,4 +32,13 @@ class ConversationInit(APIView):
 
         result = conversation_service.conversation_init(cv, jd, cv_id, jd_id, request.user)
         return resp_util.success(result)
-    
+
+class ConversationFeedback(APIView):
+
+    def post(self, request):
+        logger.info('conversation_feedback start')
+        data = json.loads(request.body)
+        interview_id = data.get('interview_id')
+        InterviewQuestion.objects.filter(interview_id=interview_id)
+
+        logger.info('conversation_feedback stop')

@@ -76,10 +76,9 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                 await self.send(text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
             elif text_data.get('operation_type') == 'stop':
                 over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
-                updater = database_sync_to_async(CUser.objects.filter(id=self.user.id).update(available_seconds=over_time))
-                await updater()
-                await self.send(text_data=resp_util.error('500', '时长不足,请充值', True))
-                await self.close(code=4001, reason='时长不足,请充值')
+                await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
+                await self.send(text_data=resp_util.error('500', 'The available time is insufficient, please recharge', True))
+                await self.close(code=4001, reason='The available time is insufficient, please recharge')
                 return
             else:
                 await self.send(resp_util.error('99', 'Unknown operation type', True))
@@ -164,7 +163,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             logger.info(f"豆包识别结果: {content_text}")
             if self.answer_content and len(content_text) == 0:
                 self.answer_stop_flag += 1
-            if self.answer_stop_flag >= 5:
+            if self.answer_stop_flag >= 3:
                 stop_flag = await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
                 if stop_flag:
                     logger.info(f"stop_flag:{stop_flag},时长不足,连接关闭")
@@ -192,11 +191,12 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await update_operation(answer_content=answer_content, question_status=1)
 
         # 保存后先判断是否到时
-        if timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp) <= 0:
-            await self.send(text_data=resp_util.error('500', '时长不足,请充值', True))
-            await self.close(code=4001, reason='时长不足,请充值')
-            update_user = database_sync_to_async(CUser.objects.filter(id=self.user.id).update)
-            await update_user()
+        over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+        if over_time <= 0:
+            await self.send(text_data=resp_util.error('500', 'The available time is insufficient, please recharge', True))
+            await self.close(code=4001, reason='The available time is insufficient, please recharge')
+            update_user = database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
+            await update_user
             stop_flag = True
             return stop_flag
 
