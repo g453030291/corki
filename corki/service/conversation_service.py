@@ -5,14 +5,15 @@ import uuid
 from concurrent.futures import wait
 
 import django
+from django.db import connection
 from json_repair import json_repair
 from loguru import logger
 
 from corki.client import doubao_client, volcengine_client, oss_client
 from corki.client.oss_client import OSSClient
-from corki.models import prompts
 from corki.models.interview import InterviewRecord, InterviewQuestion
 from corki.models.prompts import PromptsManage
+from corki.util.common_util import timeit
 from corki.util.thread_pool import submit_task
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'corki.settings'
@@ -133,14 +134,14 @@ def completions_by_key(key, system_prompts, user_prompts="和我打个招呼吧"
 
     return completion_response
 
-def conversation_init(cv, jd, cv_id, jd_id, user):
+def conversation_init(cv, jd, cv_id, jd_id, jd_title, user):
     oss_client = OSSClient()
     # 1.获取当前初始对话的CV/JD
     completion_response = doubao_client.completions(
         system_prompts=system_prompt_content,
         user_prompts=f"user_profile:\n{cv}\n,job_information:\n{jd}"
     )
-    interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id)
+    interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id, jd_title=jd_title, deleted=1)
     # 2.调用LLM API生成问题
     completion_json = json.loads(completion_response.replace("```", "").replace("json", ""))
     question_list = []
@@ -176,9 +177,111 @@ def process_audio(interview_question, oss_client):
     InterviewQuestion.objects.filter(id=interview_question.id).update(question_url=url)
     return f'q_id: {interview_question.id}, url: {url}'
 
+@timeit
+def scoring_and_suggestion(interview_id):
+    """
+    评分和建议
+    :param interview_id: 面试记录id
+    :return:
+    """
+    modules = [
+        'project_practice',
+        'technical_ability',
+        'behavioral_pattern',
+        'proj_comm_suggest',
+        'teamwork_learn_suggest'
+    ]
+    futures = [submit_task(process_interview_module, interview_id, module) for module in modules]
+    wait(futures)
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            UPDATE interview_records
+            SET average_score = (
+                project_exp_score + communication_score + professional_score + logic_score + teamwork_score + learning_score
+            ) / 6, deleted = 0
+            WHERE id = %s
+        """, [interview_id])
+
+
+def process_interview_module(interview_id, interview_module):
+    """
+    处理单个面试模块
+    :param interview_id: 面试记录id
+    :param interview_module: 模块名称
+    """
+    # 定义每个模块的参数
+    module_params = {
+        'project_practice': {'prompt_id': 3, 'filter_by_module': True},
+        'technical_ability': {'prompt_id': 4, 'filter_by_module': True},
+        'behavioral_pattern': {'prompt_id': 5, 'filter_by_module': True},
+        'proj_comm_suggest': {'prompt_id': 6, 'filter_by_module': False},
+        'teamwork_learn_suggest': {'prompt_id': 7, 'filter_by_module': False}
+    }
+
+    if interview_module not in module_params:
+        logger.info(f"interview_module error:{interview_module}")
+        return
+
+    # 获取参数
+    prompt_id = module_params[interview_module]['prompt_id']
+    filter_by_module = module_params[interview_module]['filter_by_module']
+
+    # 获取prompts
+    prompts_manage = PromptsManage.objects.get(id=prompt_id)
+
+    # 获取问题列表
+    if filter_by_module:
+        question_list = InterviewQuestion.objects.filter(interview_id=interview_id,
+                                                         module=interview_module).all()
+    else:
+        question_list = InterviewQuestion.objects.filter(interview_id=interview_id).all()
+
+    # 拼接内容
+    content = "\n".join([f"问题：{q.question_content}\n回答：{q.answer_content}" for q in question_list])
+
+    # 调用AI接口
+    completion_response = doubao_client.completions(
+        system_prompts=prompts_manage.prompts_content,
+        user_prompts=content
+    )
+
+    # 解析返回结果
+    decoded_object = json_repair.loads(completion_response)
+
+    # 根据不同模块更新不同的字段
+    if interview_module == 'project_practice':
+        InterviewRecord.objects.filter(id=interview_id).update(
+            project_exp_score=decoded_object['score']['project_exp_score'],
+            communication_score=decoded_object['score']['communication_score']
+        )
+    elif interview_module == 'technical_ability':
+        InterviewRecord.objects.filter(id=interview_id).update(
+            professional_score=decoded_object['score']['professional_score'],
+            logic_score=decoded_object['score']['logic_score']
+        )
+    elif interview_module == 'behavioral_pattern':
+        InterviewRecord.objects.filter(id=interview_id).update(
+            teamwork_score=decoded_object['score']['teamwork_score'],
+            learning_score=decoded_object['score']['learning_score']
+        )
+    elif interview_module == 'proj_comm_suggest':
+        InterviewRecord.objects.filter(id=interview_id).update(
+            proj_comm_suggest=decoded_object
+        )
+    elif interview_module == 'teamwork_learn_suggest':
+        InterviewRecord.objects.filter(id=interview_id).update(
+            teamwork_learn_suggest=decoded_object
+        )
+
 
 if __name__ == '__main__':
+    scoring_and_suggestion(InterviewRecord(id=15))
+    # sys_prompts, user_content = prompts_and_content(InterviewRecord(id=15), 'project_practice')
+    # print(sys_prompts)
+    # print('-----------')
+    # print(user_content)
     # result = completions_by_key("key", "你是字节跳动开发的AI智能助手", "你好,豆包")
     # print(result)
     # conversation_init()
-    follow_up_questions('在Spring Boot项目中，如何实现配置的动态更新与管理？', '不清楚,下一个问题')
+    # scoring_and_suggestion(None, 'project_exp_score', '', '')
+    # follow_up_questions('在Spring Boot项目中，如何实现配置的动态更新与管理？', '不清楚,下一个问题')

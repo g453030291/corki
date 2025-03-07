@@ -20,12 +20,13 @@ from django.urls import path
 
 from corki import views
 from corki.api_views import empty_views
-from corki.api_views.conversation_views import ConversationInit
+from corki.api_views.conversation_views import ConversationInit, ConversationScoring
 from corki.api_views.file_views import FileViews
 from corki.api_views.health_views import LivenessViews, ReadinessViews
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
-from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV
+from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV, \
+    InterviewList
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -63,7 +64,9 @@ urlpatterns = [
     # release api
     path("api/conversation_init", ConversationInit.as_view(), name="conversation-init"),
 
-    path("api/conversation_feedback", ConversationFeedback.as_view(), name="conversation-feedback"),
+    path("api/conversation_scoring", ConversationScoring.as_view(), name="conversation-scoring"),
+
+    path("api/interview_list", InterviewList.as_view(), name="interview-list"),
 
     # file
     path("api/upload", FileViews.as_view(), name="file-upload"),

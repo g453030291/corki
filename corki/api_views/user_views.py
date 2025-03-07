@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from corki.client.oss_client import OSSClient
+from corki.models.interview import InterviewRecord
 from corki.models.user import UserCV, CUser, UserJD
 from corki.service import user_service
 from corki.util import resp_util
@@ -166,8 +167,16 @@ class PCUploadCV(APIView):
             return resp_util.error(500, 'token 无效')
         user_id = cache.get(token)
         cv_url = data.get('cv_url')
+        cv_name = data.get('cv_name')
         UserCV.objects.filter(user_id=user_id, default_status=0).update(default_status=0)
-        user_cv = UserCV.objects.create(user_id=user_id, cv_url=cv_url, default_status=1)
+        user_cv = UserCV.objects.create(user_id=user_id, cv_url=cv_url, cv_name=cv_name, default_status=1)
         cache.delete(token)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
+
+class InterviewList(APIView):
+    def get(self, request):
+        interview_list = InterviewRecord.objects.filter(user_id=request.user.id).values('id', 'jd_title', 'average_score', 'created_at').order_by('-id').all()
+        serializer_class = InterviewRecord.get_serializer(field_names=('id', 'jd_title', 'average_score', 'created_at'))
+        serializer = serializer_class(interview_list, many=True)
+        return resp_util.success(serializer.data)

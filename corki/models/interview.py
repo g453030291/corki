@@ -1,10 +1,14 @@
 from django.db import models
+from rest_framework import serializers, fields
+
 
 class InterviewRecord(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.IntegerField(default=0, null=False, help_text='用户id')
     cv_id = models.IntegerField(default=0, null=False, help_text='简历id')
     jd_id = models.IntegerField(default=0, null=False, help_text='职位id')
+    jd_title = models.CharField(max_length=56, default='', null=False, help_text='职位名称')
+    average_score = models.IntegerField(default=0, null=False, help_text='最后平均分')
     project_exp_score = models.IntegerField(default=0, null=False, help_text='项目经验得分')
     communication_score = models.IntegerField(default=0, null=False, help_text='沟通表达得分')
     professional_score = models.IntegerField(default=0, null=False, help_text='专业能力得分')
@@ -26,6 +30,17 @@ class InterviewRecord(models.Model):
         db_table = 'interview_records'
         verbose_name = '面试记录'
         verbose_name_plural = '面试记录'
+
+    @staticmethod
+    def get_serializer(field_names=None):
+        class InterviewRecordSerializer(serializers.ModelSerializer):
+            created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+
+            class Meta:
+                model = InterviewRecord
+                fields = field_names if field_names is not None else '__all__'
+
+        return InterviewRecordSerializer
 
 class InterviewQuestion(models.Model):
     id = models.AutoField(primary_key=True)
