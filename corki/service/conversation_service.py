@@ -143,7 +143,7 @@ def conversation_init(cv, jd, cv_id, jd_id, jd_title, user):
     )
     interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id, jd_title=jd_title, deleted=1)
     # 2.调用LLM API生成问题
-    completion_json = json.loads(completion_response.replace("```", "").replace("json", ""))
+    completion_json = json_repair.loads(completion_response.replace("```", "").replace("json", ""))
     question_list = []
     for question in completion_json['questions']:
         question = InterviewQuestion.objects.create(interview_id=interview_record.id, question_content=question['question'], module=question['module'])
