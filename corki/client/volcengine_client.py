@@ -5,6 +5,7 @@ import uuid
 
 import django
 import requests
+from loguru import logger
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'corki.settings'
 django.setup()
@@ -52,6 +53,7 @@ def tts(text, voice_type="BV700_streaming"):
     request_json["request"]["text"] = text
     request_json["audio"]["voice_type"] = voice_type
     resp = requests.post(api_url, json.dumps(request_json), headers=header)
+    logger.info(f"resp body: \n{resp.text}")
     if "data" in resp.json():
         data = resp.json()["data"]
         return base64.b64decode(data)
