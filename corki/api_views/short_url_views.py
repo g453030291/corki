@@ -5,6 +5,7 @@ import string
 import django
 from django.core.cache import cache
 
+from corki.models.user import CUser
 from corki.util import resp_util
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'corki.settings'
@@ -19,7 +20,7 @@ class ShortUrlView(APIView):
 
     def get(self, request, *args, **kwargs):
         token = ''.join(random.choices(string.ascii_letters, k=8))
-        cache.set(token, request.user.id, timeout=60 * 30)
+        cache.set(token, CUser.get_serializer()(request.user).data, timeout=60 * 30)
         return resp_util.success({'token': token})
 
 if __name__ == '__main__':

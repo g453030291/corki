@@ -1,5 +1,6 @@
 import json
 import random
+from uuid import uuid4
 
 from django.core.cache import cache
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -32,13 +33,19 @@ class Login(APIView):
         data = json.loads(request.body)
         phone_number = data['phone']
         code = data['verification_code']
-        cache_code = cache.get(phone_number)
-        if code != cache_code:
-            return resp_util.error(500, '验证码错误')
-        cache.delete(phone_number)
-        user = CUser.objects.filter(phone=phone_number).first()
-        if user is None:
-            user = CUser.objects.create(phone=phone_number)
+        if phone_number is None or code is None:
+            user = CUser(id=0, guest_code=uuid4().hex, available_seconds=0)
+        else:
+            cache_code = cache.get(phone_number)
+            if code != cache_code:
+                return resp_util.error(500, '验证码错误')
+            cache.delete(phone_number)
+            user = CUser.objects.filter(phone=phone_number).first()
+            if user is None:
+                user = CUser.objects.create(phone=phone_number, available_seconds=9999)
+                UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id)
+                UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id)
+                cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
         cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=60 * 60 * 24 * 30)
         return resp_util.success({'access_token': str(access_token)})
@@ -58,7 +65,7 @@ class CV(APIView):
 
         if cv_id:
             deleted = data.get('deleted', 0)
-            update_fields = {'deleted': deleted}
+            update_fields = {'deleted': deleted, 'guest_code': request.user.guest_code}
             if 'default_status' in data and data.get('default_status') == 1:
                 update_fields['default_status'] = 1
                 UserCV.objects.filter(user_id=request.user.id).exclude(id=cv_id).update(default_status=0)
@@ -67,7 +74,7 @@ class CV(APIView):
             # Create new CV
             cv_url = data.get('cv_url')
             cv_name = data.get('cv_name')
-            UserCV.objects.filter(user_id=request.user.id).update(default_status=0)
+            UserCV.objects.filter(user_id=request.user.id, guest_code=request.user.guest_code).update(default_status=0)
             user_cv = UserCV.objects.create(user_id=request.user.id, cv_url=cv_url, cv_name=cv_name, default_status=1)
             submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
@@ -99,7 +106,7 @@ class JD(APIView):
         deleted = data.get('deleted', 0)
 
         # Build update fields dictionary
-        fields = {}
+        fields = {'guest_code': request.user.guest_code}
         if jd_url:
             fields['jd_url'] = jd_url
         if jd_title:
@@ -153,7 +160,7 @@ class UploadCV(APIView):
         data = json.loads(request.body)
         cv_url = data.get('cv_url')
         UserCV.objects.filter(user_id=request.user.id, default_status=0).update(default_status=0)
-        user_cv = UserCV.objects.create(user_id=request.user.id, cv_url=cv_url, default_status=1)
+        user_cv = UserCV.objects.create(user_id=request.user.id, guest_code=request.user.guest_code, cv_url=cv_url, default_status=1)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
 
@@ -165,11 +172,12 @@ class PCUploadCV(APIView):
         token = data.get('token')
         if token is None or not cache.has_key(token):
             return resp_util.error(500, 'token 无效')
-        user_id = cache.get(token)
+        user_json = cache.get(token)
+        user = CUser.get_serializer().Meta.model(**user_json)
         cv_url = data.get('cv_url')
         cv_name = data.get('cv_name')
-        UserCV.objects.filter(user_id=user_id, default_status=0).update(default_status=0)
-        user_cv = UserCV.objects.create(user_id=user_id, cv_url=cv_url, cv_name=cv_name, default_status=1)
+        UserCV.objects.filter(user_id=user.id, default_status=0).update(default_status=0)
+        user_cv = UserCV.objects.create(user_id=user.id, guest_code=user.guest_code, cv_url=cv_url, cv_name=cv_name, default_status=1)
         cache.delete(token)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
