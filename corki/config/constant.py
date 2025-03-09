@@ -9,3 +9,7 @@ SCORE_TYPE_LIST = [
     "logic_score",
     "teamwork_score",
     "learning_score"]
+
+USER_CACHE_SECONDS = 30 * 24 * 60 * 60
+
+NEW_USER_FREE_SECONDS = 999

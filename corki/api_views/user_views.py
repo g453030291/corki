@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from corki.client.oss_client import OSSClient
+from corki.config import constant
 from corki.config.permissions import IsAuthenticatedOrGuest
 from corki.models.interview import InterviewRecord
 from corki.models.user import UserCV, CUser, UserJD
@@ -44,12 +45,12 @@ class Login(APIView):
             cache.delete(phone_number)
             user = CUser.objects.filter(phone=phone_number).first()
             if user is None:
-                user = CUser.objects.create(phone=phone_number, available_seconds=9999)
+                user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
                 UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
                 UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
                 cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
-        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=60 * 60 * 24 * 30)
+        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
         return resp_util.success({'access_token': str(access_token)})
 
 class RequestUser(APIView):

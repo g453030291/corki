@@ -6,10 +6,11 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.core.cache import cache
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from corki.config import constant
 from corki.models.user import CUser
 
 class CrokiJWTAuthentication(JWTAuthentication):
-    white_paths = ['/api/login']
+    white_paths = ['/api/login', '/api/health/liveness', '/api/health/readiness']
     def authenticate(self, request):
         request_path = request.path
         header = self.get_header(request)
@@ -29,6 +30,7 @@ class CrokiJWTAuthentication(JWTAuthentication):
         cached_data = cache.get(token)
 
         if cached_data:
+            cache.set(token, cached_data, timeout=constant.USER_CACHE_SECONDS)
             user = CUser(**cached_data)
             request.user = user
             return user, token
