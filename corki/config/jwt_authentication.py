@@ -14,6 +14,8 @@ class CrokiJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
         request_path = request.path
         header = self.get_header(request)
+        if request_path in self.white_paths:
+            return None, None
         if header is None and request_path not in self.white_paths:
             raise AuthenticationFailed()
         token = self.get_raw_token(header)
