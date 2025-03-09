@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from corki.client.oss_client import OSSClient
+from corki.config.permissions import IsAuthenticatedOrGuest
 from corki.models.interview import InterviewRecord
 from corki.models.user import UserCV, CUser, UserJD
 from corki.service import user_service
@@ -30,12 +31,13 @@ class Login(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        data = json.loads(request.body)
-        phone_number = data['phone']
-        code = data['verification_code']
-        if phone_number is None or code is None:
+        body = request.body
+        if not body:
             user = CUser(id=0, guest_code=uuid4().hex, available_seconds=0)
         else:
+            data = json.loads(body)
+            phone_number = data['phone']
+            code = data['verification_code']
             cache_code = cache.get(phone_number)
             if code != cache_code:
                 return resp_util.error(500, '验证码错误')
@@ -43,8 +45,8 @@ class Login(APIView):
             user = CUser.objects.filter(phone=phone_number).first()
             if user is None:
                 user = CUser.objects.create(phone=phone_number, available_seconds=9999)
-                UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id)
-                UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id)
+                UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+                UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
                 cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
         cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=60 * 60 * 24 * 30)
@@ -59,6 +61,9 @@ class RequestUser(APIView):
 
 
 class CV(APIView):
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
+
     def post(self, request):
         data = json.loads(request.body)
         cv_id = data.get('id')
@@ -75,16 +80,20 @@ class CV(APIView):
             cv_url = data.get('cv_url')
             cv_name = data.get('cv_name')
             UserCV.objects.filter(user_id=request.user.id, guest_code=request.user.guest_code).update(default_status=0)
-            user_cv = UserCV.objects.create(user_id=request.user.id, cv_url=cv_url, cv_name=cv_name, default_status=1)
+            user_cv = UserCV.objects.create(user_id=request.user.id, guest_code=request.user.guest_code, cv_url=cv_url, cv_name=cv_name, default_status=1)
+            cv_id = user_cv.id
             submit_task(user_service.analysis_cv_jd, user_cv, None)
-        return resp_util.success()
+        return resp_util.success(cv_id)
 
 class CVList(APIView):
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
+
     def post(self, request):
         data = json.loads(request.body)
         default_status = data.get('default_status', None)
         new_one = data.get('new_one', 0)
-        query_params = {'user_id': request.user.id, 'deleted': 0}
+        query_params = {'user_id': request.user.id, 'guest_code': request.user.guest_code, 'deleted': 0}
         if default_status is not None:
             query_params['default_status'] = default_status
         if new_one == 1:
@@ -96,6 +105,9 @@ class CVList(APIView):
         return resp_util.success(serializer.data)
 
 class JD(APIView):
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
+
     def post(self, request):
         data = json.loads(request.body)
         jd_id = data.get('id')
@@ -132,13 +144,16 @@ class JD(APIView):
             fields['user_id'] = request.user.id
             fields['default_status'] = 1
             jd = UserJD.objects.create(**fields)
-
+            jd_id = jd.id
             # Reset other JDs for this user
             UserJD.objects.filter(user_id=request.user.id).exclude(id=jd.id).update(default_status=0)
 
-        return resp_util.success()
+        return resp_util.success(jd_id)
 
 class JDList(APIView):
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
+
     def post(self, request):
         data = json.loads(request.body)
         default_status = data.get('default_status', None)
@@ -155,6 +170,8 @@ class JDList(APIView):
         return resp_util.success(serializer.data)
 
 class UploadCV(APIView):
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
 
     def post(self, request):
         data = json.loads(request.body)

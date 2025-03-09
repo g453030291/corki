@@ -1,4 +1,5 @@
 from django.db import models
+from pytz import timezone
 from rest_framework import serializers, fields
 
 
@@ -23,7 +24,7 @@ class InterviewRecord(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=False, help_text='更新时间')
     updater_id = models.IntegerField(default=0, null=False, help_text='更新人 ID')
     updater_name = models.CharField(max_length=255, default='', null=False, help_text='更新账户名')
-    deleted = models.BooleanField(default=False, null=False, help_text='删除标识:0=未删除,1=已删除')
+    deleted = models.IntegerField(default=0, null=False, help_text='删除标识:0=未删除,1=已删除')
 
     class Meta:
         managed = False
@@ -34,7 +35,8 @@ class InterviewRecord(models.Model):
     @staticmethod
     def get_serializer(field_names=None):
         class InterviewRecordSerializer(serializers.ModelSerializer):
-            created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+            created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", default_timezone=timezone('Asia/Shanghai'))
+            updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", default_timezone=timezone('Asia/Shanghai'))
 
             class Meta:
                 model = InterviewRecord
@@ -47,6 +49,7 @@ class InterviewQuestion(models.Model):
     interview_id = models.IntegerField(default=0, null=False, help_text='面试 id')
     question_status = models.IntegerField(default=0, null=False, help_text='问答状态:0=未回答,1=已回答')
     question_type = models.IntegerField(default=0, null=False, help_text='问题类型:0=一级,1=二级,2=三级')
+    question_closely_status = models.IntegerField(default=0, null=False, help_text='是否生成了追问:0=未生成,1=已生成')
     parent_question_id = models.IntegerField(default=0, null=False, help_text='父级问题 id')
     module = models.CharField(max_length=56, default='', null=False, help_text='问题类型')
     question_content = models.CharField(max_length=128, default='', null=False, help_text='问题内容')
@@ -58,7 +61,7 @@ class InterviewQuestion(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=False, help_text='更新时间')
     updater_id = models.IntegerField(default=0, null=False, help_text='更新人 ID')
     updater_name = models.CharField(max_length=255, default='', null=False, help_text='更新账户名')
-    deleted = models.BooleanField(default=False, null=False, help_text='删除标识:0=未删除,1=已删除')
+    deleted = models.IntegerField(default=0, null=False, help_text='删除标识:0=未删除,1=已删除')
 
     class Meta:
         managed = False

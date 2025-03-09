@@ -3,6 +3,8 @@ from urllib.parse import parse_qs
 from django.core.cache import cache
 from loguru import logger
 
+from corki.models.user import CUser
+
 
 class WSAuthMiddleware:
     def __init__(self, app):
@@ -18,7 +20,14 @@ class WSAuthMiddleware:
         token_key = params.get("token", [None])[0]
 
         if token_key and cache.has_key(token_key):
-            logger.info(f"Token {token_key} is valid")
+            logger.info(f"Token {token_key} validating")
+            cached_data = cache.get(token_key)
+            user = CUser(**cached_data)
+            if user.id == 0:
+                logger.error(f"Token {token_key} is invalid")
+                # 关闭WebSocket连接
+                await send({"type": "websocket.close", "code": 4001})
+                return
             # 可以在这里添加更多信息到scope中，比如用户信息
             # scope["token"] = token_key
             # scope["authenticated"] = True

@@ -51,25 +51,14 @@
 
                 // 处理音频数据
                 processor.onaudioprocess = (e) => {
-                    if (ws && ws.readyState === WebSocket.OPEN &&!isAudioPlaying) {
-                        // 获取音频数据
+                    if (ws && ws.readyState === WebSocket.OPEN && !isAudioPlaying) {
                         const inputData = e.inputBuffer.getChannelData(0);
-
-                        // 转换为16位整数
                         const pcmData = new Int16Array(inputData.length);
                         for (let i = 0; i < inputData.length; i++) {
                             pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 0x7FFF));
                         }
-
-                        // 累积音频数据
+                        // Just accumulate data
                         accumulatedData.push(...pcmData);
-
-                        // 发送累积的数据
-                        while (accumulatedData.length >= sampleRate) {
-                            const dataToSend = accumulatedData.slice(0, sampleRate);
-                            ws.send(new Int16Array(dataToSend).buffer);
-                            accumulatedData = accumulatedData.slice(sampleRate);
-                        }
                     }
                 };
 
@@ -79,9 +68,19 @@
 
                 ws.onopen = function() {
                     console.log('连接成功');
-                    // 3. 链接成功后，还是发送我现在写死的一个接口数据
                     interview_id = document.getElementById('interview_id').value;
                     ws.send(JSON.stringify({"operation_type": "start", "interview_id": interview_id}));
+                    
+                    // Start sending data at 1-second intervals
+                    sendInterval = setInterval(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN && !isAudioPlaying && accumulatedData.length > 0) {
+                            // Send approximately 1 second of audio data
+                            const dataToSend = accumulatedData.slice(0, sampleRate);
+                            ws.send(new Int16Array(dataToSend).buffer);
+                            accumulatedData = accumulatedData.slice(Math.min(sampleRate, accumulatedData.length));
+                            console.log("Sent 1 second of audio data");
+                        }
+                    }, 1000);
                 };
 
                 ws.onmessage = function(e) {
@@ -96,6 +95,7 @@
 
                 ws.onclose = function() {
                     console.log('连接关闭');
+                    clearInterval(sendInterval);
                 };
 
                 ws.onerror = function() {

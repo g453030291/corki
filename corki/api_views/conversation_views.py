@@ -51,4 +51,4 @@ class ConversationScoring(APIView):
         interview_id = data.get('interview_id')
         conversation_service.scoring_and_suggestion(interview_id)
         logger.info('conversation_feedback stop')
-        return resp_util.success()
+        return resp_util.success(interview_id)

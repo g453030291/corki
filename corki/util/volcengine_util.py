@@ -6,6 +6,7 @@ import json
 import os
 from uuid import uuid4
 
+from loguru import logger
 from sympy import false
 
 from corki.test.tts_websocket_demo import appid
@@ -165,6 +166,7 @@ def sauc_parse_response(res):
         payload_msg = str(payload_msg, "utf-8")
     result['payload_msg'] = payload_msg
     result['payload_size'] = payload_size
+    logger.info(f"sauc_parse_response: {json.dumps(result)}")
     return result
 
 def tts_full_client_request(user_id, text, operation):

@@ -9,13 +9,15 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from corki.models.user import CUser
 
 class CrokiJWTAuthentication(JWTAuthentication):
+    white_paths = ['/api/login']
     def authenticate(self, request):
+        request_path = request.path
         header = self.get_header(request)
-        if header is None:
-            return None
+        if header is None and request_path not in self.white_paths:
+            raise AuthenticationFailed()
         token = self.get_raw_token(header)
         if token is None:
-            return None
+            raise AuthenticationFailed()
         token = token.decode('utf-8')
         # payload = jwt.decode(
         #     token,

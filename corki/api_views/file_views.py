@@ -6,10 +6,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from corki.client.oss_client import OSSClient
+from corki.config.permissions import IsAuthenticatedOrGuest
 from corki.util import resp_util
 
 class FileViews(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrGuest]
+    allow_guest = True
 
     def post(self, request):
         """

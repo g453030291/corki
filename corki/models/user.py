@@ -1,4 +1,5 @@
 from django.db import models
+from pytz import timezone
 from rest_framework import serializers
 
 class CUser(models.Model):
@@ -55,6 +56,7 @@ class UserCV(models.Model):
     @staticmethod
     def get_serializer():
         class UserCVSerializer(serializers.ModelSerializer):
+            created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', default_timezone=timezone('Asia/Shanghai'))
             class Meta:
                 model = UserCV
                 fields = 'id', 'user_id', 'default_status', 'cv_name', 'cv_url', 'created_at'
@@ -85,6 +87,8 @@ class UserJD(models.Model):
     @staticmethod
     def get_serializer():
         class UserJDSerializer(serializers.ModelSerializer):
+            created_at = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', default_timezone=timezone('Asia/Shanghai'))
+
             class Meta:
                 model = UserJD
                 fields = 'id', 'user_id', 'default_status', 'jd_title', 'jd_url', 'created_at'
