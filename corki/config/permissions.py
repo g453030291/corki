@@ -8,4 +8,4 @@ class IsAuthenticatedOrGuest(BasePermission):
         else:
             if request.user.id == 0:
                 return False
-        return False
+        return True

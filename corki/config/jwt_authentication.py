@@ -10,17 +10,26 @@ from corki.config import constant
 from corki.models.user import CUser
 
 class CrokiJWTAuthentication(JWTAuthentication):
-    white_paths = ['/api/login', '/api/health/liveness', '/api/health/readiness']
+    white_paths = ['/api/user/login', '/api/user/send_code', '/api/health/liveness', '/api/health/readiness', '/home3']
     def authenticate(self, request):
         request_path = request.path
         header = self.get_header(request)
+        token = None
+
         if request_path in self.white_paths:
-            return None, None
-        if header is None and request_path not in self.white_paths:
-            raise AuthenticationFailed()
-        token = self.get_raw_token(header)
+            if header:
+                token = self.get_raw_token(header)
+            else:
+                return None, None
+        else:
+            if header:
+                token = self.get_raw_token(header)
+            else:
+                raise AuthenticationFailed()
+
         if token is None:
             raise AuthenticationFailed()
+
         token = token.decode('utf-8')
         # payload = jwt.decode(
         #     token,

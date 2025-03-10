@@ -32,8 +32,8 @@ class Login(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        body = request.body
-        if not body:
+        body = request.body.decode('utf-8')
+        if not body or body == '{}':
             user = CUser(id=0, guest_code=uuid4().hex, available_seconds=0)
         else:
             data = json.loads(body)
@@ -48,7 +48,8 @@ class Login(APIView):
                 user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
                 UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
                 UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
-                cache.delete(request.auth)
+
+        cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
         cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
         return resp_util.success({'access_token': str(access_token)})
