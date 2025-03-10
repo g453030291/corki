@@ -22,4 +22,4 @@ djangorestframework-simplejwt==5.4.0
 json-repair==0.39.1
 tqdm==4.67.1
 pytz==2024.2
-volcengine==1.0.174
+#volcengine==1.0.174
