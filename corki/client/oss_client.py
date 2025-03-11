@@ -9,7 +9,7 @@ class OSSClient:
     def __init__(self):
         self.endpoint = os.getenv('OSS_ENDPOINT')
         self.bucket_name = os.getenv('OSS_BUCKET_NAME')
-        self.auth = oss2.Auth(os.getenv('ACCESS_KEY_ID'), os.getenv('ACCESS_KEY_SECRET'))
+        self.auth = oss2.Auth(os.getenv('ALI_ACCESS_KEY_ID'), os.getenv('ALI_ACCESS_KEY_SECRET'))
         self.bucket = oss2.Bucket(self.auth, self.endpoint, self.bucket_name)
 
     def put_object(self, key, data):

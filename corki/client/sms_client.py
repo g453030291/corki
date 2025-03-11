@@ -16,7 +16,7 @@ sms_service.set_sk(os.getenv('VOLCENGINE_SECRET_ACCESS_KEY'))
 def send_code(phone, code):
     body = {
         "SmsAccount": os.getenv('VOLCENGINE_SMS_ACCOUNT_ID'),
-        "Sign": os.getenv('VOLCENGINE_SMS_SIGN_NAME'),
+        "Sign": '微迪欧文化',
         "TemplateID": os.getenv('VOLCENGINE_SMS_TEMPLATE_ID'),
         "TemplateParam": f'{{"code": "{code}"}}',
         "PhoneNumbers": phone,
