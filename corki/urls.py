@@ -22,6 +22,7 @@ from corki import views
 from corki.api_views import empty_views
 from corki.api_views.conversation_views import ConversationInit, ConversationScoring
 from corki.api_views.file_views import FileViews
+from corki.api_views.guest_views import GuestTokenView
 from corki.api_views.health_views import LivenessViews, ReadinessViews
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
@@ -47,6 +48,7 @@ urlpatterns = [
     # user
     path("api/user/send_code", SendCode.as_view(), name="send-code"),
     path("api/user/login", Login.as_view(), name="user-login"),
+    path("api/guest/token", GuestTokenView.as_view(), name="guest-token"),
     path("api/user/request", RequestUser.as_view(), name="request-user"),
     path("api/user/cv", CV.as_view(), name="cv-upload"),
     path("api/user/cv_list", CVList.as_view(), name="cv-list"),

@@ -7,9 +7,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
+from corki.client import sms_client
 from corki.client.oss_client import OSSClient
 from corki.config import constant
-from corki.config.permissions import IsAuthenticatedOrGuest
+from corki.config.permissions import IsAuthedOrGuest
 from corki.models.interview import InterviewRecord
 from corki.models.user import UserCV, CUser, UserJD
 from corki.service import user_service
@@ -26,28 +27,26 @@ class SendCode(APIView):
         verification_code = random.randint(1000, 9999)
         # 将验证码存入缓存
         cache.set(phone, verification_code, timeout=300)
-        return resp_util.success({'verification_code': verification_code})
+        send_flag = sms_client.send_code(phone, verification_code)
+        return resp_util.success('发送成功!') if send_flag else resp_util.error(500, '验证码发送失败')
 
 class Login(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         body = request.body.decode('utf-8')
-        if not body or body == '{}':
-            user = CUser(id=0, guest_code=uuid4().hex, available_seconds=0)
-        else:
-            data = json.loads(body)
-            phone_number = data['phone']
-            code = data['verification_code']
-            cache_code = cache.get(phone_number)
-            if code != cache_code:
-                return resp_util.error(500, '验证码错误')
-            cache.delete(phone_number)
-            user = CUser.objects.filter(phone=phone_number).first()
-            if user is None:
-                user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
-                UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
-                UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+        data = json.loads(body)
+        phone_number = data['phone']
+        code = data['verification_code']
+        cache_code = cache.get(phone_number)
+        if code != cache_code:
+            return resp_util.error(500, '验证码错误')
+        cache.delete(phone_number)
+        user = CUser.objects.filter(phone=phone_number).first()
+        if user is None:
+            user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
+            UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+            UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
 
         cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
@@ -63,8 +62,7 @@ class RequestUser(APIView):
 
 
 class CV(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
-    allow_guest = True
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -88,8 +86,7 @@ class CV(APIView):
         return resp_util.success(cv_id)
 
 class CVList(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
-    allow_guest = True
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -107,8 +104,7 @@ class CVList(APIView):
         return resp_util.success(serializer.data)
 
 class JD(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
-    allow_guest = True
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -153,8 +149,7 @@ class JD(APIView):
         return resp_util.success(jd_id)
 
 class JDList(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
-    allow_guest = True
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -172,9 +167,6 @@ class JDList(APIView):
         return resp_util.success(serializer.data)
 
 class UploadCV(APIView):
-    permission_classes = [IsAuthenticatedOrGuest]
-    allow_guest = True
-
     def post(self, request):
         data = json.loads(request.body)
         cv_url = data.get('cv_url')
@@ -184,7 +176,6 @@ class UploadCV(APIView):
         return resp_util.success()
 
 class PCUploadCV(APIView):
-    permission_classes = [AllowAny]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -202,7 +193,11 @@ class PCUploadCV(APIView):
         return resp_util.success()
 
 class InterviewList(APIView):
+    permission_classes = [IsAuthedOrGuest]
+
     def get(self, request):
+        if not request.user.is_authenticated:
+            return resp_util.success()
         interview_list = InterviewRecord.objects.filter(user_id=request.user.id).values('id', 'jd_title', 'average_score', 'created_at').order_by('-id').all()
         serializer_class = InterviewRecord.get_serializer(field_names=('id', 'jd_title', 'average_score', 'created_at'))
         serializer = serializer_class(interview_list, many=True)

@@ -53,12 +53,11 @@ INSTALLED_APPS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'corki.config.jwt_authentication.CrokiJWTAuthentication',  # 使用 JWT 认证
+        'corki.config.jwt_auth.CrokiJWTAuthentication',  # 使用 JWT 认证
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAuthenticated',  # 默认所有接口需要登录
-        'corki.config.permissions.IsAuthenticatedOrGuest',
-
+        'rest_framework.permissions.IsAuthenticated',  # 默认所有接口需要登录
+        # 'corki.config.permissions.IsAuthenticatedOrGuest',
     ],
     'EXCEPTION_HANDLER': 'corki.config.exception_handler.auth_exception_handler'
 }

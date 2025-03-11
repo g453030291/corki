@@ -17,11 +17,25 @@ class CUser(models.Model):
     updater_name = models.CharField(max_length=255, default='', null=False, help_text='更新账户名')
     deleted = models.IntegerField(default=0, null=False, help_text='删除标识:0=未删除,1=已删除')
 
-    is_authenticated = True
-
     class Meta:
         managed = False
         db_table = 'c_users'
+
+    @property
+    def is_authenticated(self):
+        """
+        判断用户是否已登录:
+        - 有手机号的用户被视为已登录
+        - 只有 guest_code 的用户被视为临时用户
+        """
+        return bool(self.phone)
+
+    @property
+    def is_anonymous(self):
+        """
+        判断用户是否为匿名用户
+        """
+        return not self.is_authenticated
 
     @staticmethod
     def get_serializer():

@@ -20,7 +20,7 @@ def auth_exception_handler(exc, context):
                                error_status=status.HTTP_401_UNAUTHORIZED)
     if response is not None and response.status_code == status.HTTP_403_FORBIDDEN:
         return resp_util.error(403,
-                               'Access denied, please log in.',
+                               '拒绝访问,请登录!',
                                as_string=False,
                                error_status=status.HTTP_403_FORBIDDEN)
     return response
