@@ -1,15 +1,13 @@
 import os
-from uuid import uuid4
-
 
 import django
 from loguru import logger
 
+from corki.client.ali_client import AliClient
+
 os.environ['DJANGO_SETTINGS_MODULE'] = 'corki.settings'
 django.setup()
-from corki.config.constant import TMP_PATH
 from corki.models.user import UserCV, UserJD
-from corki.util import file_util, pdf_util, ocr_util
 
 
 def analysis_cv_jd(user_cv: UserCV, user_jd: UserJD):
@@ -19,21 +17,19 @@ def analysis_cv_jd(user_cv: UserCV, user_jd: UserJD):
     :param user_cv: 简历
     :return:
     """
+
     if user_cv:
         url = user_cv.cv_url
-        path = TMP_PATH + os.path.basename(url)
-        file_util.download_file(path, url)
-        text = pdf_util.extract_text_from_pdf(path)
-        UserCV.objects.filter(id=user_cv.id).update(cv_content=text)
-        os.remove(path)
+        doc_result = AliClient.doc_mind(
+            url=url,
+            file_name=os.path.basename(url)
+        )
+        UserCV.objects.filter(id=user_cv.id).update(cv_content=doc_result)
         logger.info(f"cv解析完成:id={user_cv.id}")
     elif user_jd:
         url = user_jd.jd_url
-        path = TMP_PATH + os.path.basename(url)
-        file_util.download_file(path, url)
-        text = ocr_util.extract_text_from_image(path)
-        UserJD.objects.filter(id=user_jd.id).update(jd_content=text)
-        os.remove(path)
+        ocr_result = AliClient.ocr(url)
+        UserJD.objects.filter(id=user_jd.id).update(jd_content=ocr_result)
         logger.info(f"jd解析完成:id={user_jd.id}")
     else:
         logger.info("cv/jd不存在")

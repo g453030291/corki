@@ -4,15 +4,6 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies required for OpenCV and building Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    gcc \
-    build-essential \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy the requirements file into the container
 COPY requirements.txt .
 
