@@ -4,10 +4,11 @@ from rest_framework.views import APIView
 
 from corki.client import doubao_client
 from corki.client.ali_client import AliClient
+from corki.config.permissions import IsAuthedOrGuest
 from corki.util import resp_util
 
-
 class OCRViews(APIView):
+    permission_classes = [IsAuthedOrGuest]
 
     def post(self, request):
         data = json.loads(request.body)
