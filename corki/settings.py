@@ -31,7 +31,7 @@ cluster_str = os.getenv('CLUSTER')
 IS_PROD = cluster_str == 'prod'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = IS_PROD
+DEBUG = not IS_PROD
 
 ALLOWED_HOSTS = ['*']
 
