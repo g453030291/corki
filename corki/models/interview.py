@@ -36,7 +36,7 @@ class InterviewRecord(models.Model):
     def get_serializer(field_names=None):
         class InterviewRecordSerializer(serializers.ModelSerializer):
             created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", default_timezone=timezone('Asia/Shanghai'))
-            updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", default_timezone=timezone('Asia/Shanghai'))
+            # updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", default_timezone=timezone('Asia/Shanghai'))
 
             class Meta:
                 model = InterviewRecord
