@@ -6,7 +6,7 @@ from sympy import false
 
 from corki.client import doubao_client
 from corki.models.interview import InterviewQuestion, InterviewRecord
-from corki.models.user import UserCV, UserJD
+from corki.models.user import UserCV, UserJD, CUser
 from corki.service import conversation_service
 from corki.util import resp_util
 
@@ -14,6 +14,11 @@ from corki.util import resp_util
 class ConversationInit(APIView):
 
     def post(self, request):
+        # 判断可用时长
+        cuser =  CUser.objects.get(id=request.user.id)
+        if cuser.available_seconds <= 0:
+            return resp_util.error(500, '时长耗尽,请充值!')
+
         data = json.loads(request.body)
 
         # Handle CV data
