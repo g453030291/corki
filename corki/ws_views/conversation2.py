@@ -79,13 +79,13 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             elif text_data.get('operation_type') == 'stop':
                 over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
                 await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
-                await self.send(text_data=resp_util.error('500', '已挂断!', True))
+                await self.send(text_data=resp_util.error(500, '已挂断!', True))
                 await self.close(code=4001, reason='收到用户挂断请求!')
                 await self.sauc_ws_client.close()
                 self.sauc_ws_client_is_connected = False
                 return
             else:
-                await self.send(resp_util.error('99', 'Unknown operation type', True))
+                await self.send(resp_util.error(99, 'Unknown operation type', True))
         if bytes_data:
             await self.process_voice_bytes(bytes_data)
 
@@ -105,6 +105,11 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         user_available_seconds = await database_sync_to_async(
             CUser.objects.filter(id=user.id).values('available_seconds').first)()
         self.available_seconds = user_available_seconds['available_seconds']
+        if self.available_seconds <= 0:
+            # 如果用户的可用时间小于等于0，拒绝连接
+            logger.info(f"ws conversation:User {user.id} has no available seconds.")
+            await self.close(code=4001)
+            return
         self.start_timestamp = int(time.time())
 
     async def sauc_init(self):
@@ -178,7 +183,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                     logger.info(f"stop_flag:{stop_flag},连接关闭")
                     over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
                     await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
-                    await self.send(text_data=resp_util.error('500', stop_reason, True))
+                    await self.send(text_data=resp_util.error(500, stop_reason, True))
                     await self.close(code=4001, reason='The available time is insufficient, please recharge')
                     await self.sauc_ws_client.close()
                     self.sauc_ws_client_is_connected = False
