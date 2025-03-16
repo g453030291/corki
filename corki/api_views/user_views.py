@@ -57,7 +57,8 @@ class RequestUser(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_json = CUser.get_serializer()(request.user).data
+        cuser = CUser.objects.get(id=request.user.id)
+        user_json = CUser.get_serializer()(cuser).data
         return resp_util.success(user_json)
 
 
