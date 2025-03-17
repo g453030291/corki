@@ -82,7 +82,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corki.config.exception_middleware.GlobalExceptionMiddleware"
+    "corki.config.exception_middleware.GlobalExceptionMiddleware",
+    "corki.config.api_timing_middleware.APITimingMiddleware"
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
