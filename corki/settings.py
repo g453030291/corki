@@ -45,11 +45,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "corki",
+    "corki.apps.CorkiConfig",
     "channels",
     "rest_framework",
     "rest_framework_simplejwt",
-    'corsheaders'
+    "corsheaders",
 ]
 
 REST_FRAMEWORK = {
@@ -134,6 +134,11 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": os.getenv('REDIS_PASSWORD'),
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 100,  # 连接池最大连接数
+                "socket_timeout": 5,     # Socket 超时时间（秒）
+                "socket_connect_timeout": 5  # Socket 连接超时时间（秒）
+            }
         }
     }
 }
