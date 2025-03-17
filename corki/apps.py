@@ -2,6 +2,7 @@ import traceback
 
 from django.apps import AppConfig
 from django.core.cache import cache
+from loguru import logger
 
 
 class CorkiConfig(AppConfig):
@@ -27,9 +28,9 @@ class CorkiConfig(AppConfig):
             warmup_value = cache.get('redis_warmup_key')
 
             if warmup_value == 'warmup_value':
-                print("Redis 连接已成功预热")
+                logger.info("Redis 连接已成功预热")
             else:
-                print("Redis 连接预热可能失败")
+                logger.info("Redis 连接预热可能失败")
 
-        except Exception as e:
-            print(f"Redis 连接预热失败: {traceback.format_exc()}")
+        except:
+            logger.info(f"Redis 连接预热失败: {traceback.format_exc()}")
