@@ -27,7 +27,7 @@ from corki.api_views.health_views import LivenessViews, ReadinessViews
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
 from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV, \
-    InterviewList
+    InterviewList, Logout
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -48,6 +48,7 @@ urlpatterns = [
     # user
     path("api/user/send_code", SendCode.as_view(), name="send-code"),
     path("api/user/login", Login.as_view(), name="user-login"),
+    path("api/user/logout", Logout.as_view(), name="user-logout"),
     path("api/guest/token", GuestTokenView.as_view(), name="guest-token"),
     path("api/user/request", RequestUser.as_view(), name="request-user"),
     path("api/user/cv", CV.as_view(), name="cv-upload"),
