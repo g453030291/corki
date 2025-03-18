@@ -8,7 +8,7 @@ class APITimingMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest):
-        if request.path in ['/api/health/liveness', '/api/health/readiness']:
+        if request.path in ['/api/health/liveness', '/api/health/readiness', '/']:
             return self.get_response(request)
         user_id = request.user.id
         start_time = time.time()
