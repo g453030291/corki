@@ -16,10 +16,10 @@ class CrokiJWTAuthentication(JWTAuthentication):
                    '/home3']
     def authenticate(self, request):
         # header = self.get_header(request)
-        for key, value in request.headers.items():
-            logger.info(f"Header: {key} = {value}")
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        logger.info(f"X-Forwarded-For: {x_forwarded_for}")
+        # for key, value in request.headers.items():
+        #     logger.info(f"Header: {key} = {value}")
+        # x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        # logger.info(f"X-Forwarded-For: {x_forwarded_for}")
         request_path = request.path
         header = self.get_header(request)
         # 白名单直接放行

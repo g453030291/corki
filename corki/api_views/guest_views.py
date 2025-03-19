@@ -15,6 +15,8 @@ class GuestTokenView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        for key, value in request.headers.items():
+            logger.info(f"Header: {key} = {value}")
         x_forwarded_for = request.META.get('X-Forwarded-For', '')
         user = CUser(id=0, guest_code=uuid4().hex, phone='', available_seconds=0)
         access_token = AccessToken.for_user(user)
