@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.core.cache import cache
+from loguru import logger
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
