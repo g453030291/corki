@@ -24,6 +24,7 @@ from corki.api_views.conversation_views import ConversationInit, ConversationSco
 from corki.api_views.file_views import FileViews
 from corki.api_views.guest_views import GuestTokenView
 from corki.api_views.health_views import LivenessViews, ReadinessViews
+from corki.api_views.message_views import Message
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
 from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV, \
@@ -57,6 +58,7 @@ urlpatterns = [
     path("api/user/pc_upload_cv", PCUploadCV.as_view(), name="pc-upload-cv"),
     path("api/user/jd", JD.as_view(), name="jd-upload"),
     path("api/user/jd_list", JDList.as_view(), name="jd-list"),
+    path("api/user/message", Message.as_view(), name="save-message"),
 
     # home
     path("home3", Home3.as_view(), name="home-page3"),
