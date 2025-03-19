@@ -1,5 +1,6 @@
 import jwt
 from django.contrib.auth import get_user_model
+from loguru import logger
 from rest_framework import authentication
 from rest_framework.authentication import get_authorization_header
 from rest_framework.exceptions import AuthenticationFailed
@@ -14,6 +15,11 @@ class CrokiJWTAuthentication(JWTAuthentication):
                    '/api/health/liveness', '/api/health/readiness',
                    '/home3']
     def authenticate(self, request):
+        # header = self.get_header(request)
+        for key, value in request.headers.items():
+            logger.info(f"Header: {key} = {value}")
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        logger.info(f"X-Forwarded-For: {x_forwarded_for}")
         request_path = request.path
         header = self.get_header(request)
         # 白名单直接放行

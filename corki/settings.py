@@ -33,7 +33,7 @@ IS_PROD = cluster_str == 'prod'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = not IS_PROD
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['ointerview.com', 'api.ointerview.com', 'www.ointerview.com', 'localhost']
 
 # Application definition
 
