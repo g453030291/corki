@@ -184,6 +184,7 @@ class UploadCV(APIView):
         return resp_util.success()
 
 class PCUploadCV(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         data = json.loads(request.body)
@@ -194,7 +195,7 @@ class PCUploadCV(APIView):
         user = CUser.get_serializer().Meta.model(**user_json)
         cv_url = data.get('cv_url')
         cv_name = data.get('cv_name')
-        UserCV.objects.filter(user_id=user.id, default_status=0).update(default_status=0)
+        UserCV.objects.filter(user_id=user.id, guest_code=user.guest_code, default_status=0).update(default_status=0)
         user_cv = UserCV.objects.create(user_id=user.id, guest_code=user.guest_code, cv_url=cv_url, cv_name=cv_name, default_status=1)
         cache.delete(token)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
