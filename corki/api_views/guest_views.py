@@ -18,7 +18,7 @@ class GuestTokenView(APIView):
     def get(self, request):
         for key, value in request.headers.items():
             logger.info(f"Header: {key} = {value}")
-        x_forwarded_for = request.META.get('X-Forwarded-For', '')
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
         user = CUser(id=0, guest_code=uuid4().hex, phone='', available_seconds=0)
         access_token = AccessToken.for_user(user)
         cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
