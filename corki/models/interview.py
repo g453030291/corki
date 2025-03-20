@@ -9,6 +9,7 @@ class InterviewRecord(models.Model):
     cv_id = models.IntegerField(default=0, null=False, help_text='简历id')
     jd_id = models.IntegerField(default=0, null=False, help_text='职位id')
     jd_title = models.CharField(max_length=56, default='', null=False, help_text='职位名称')
+    time_consuming = models.IntegerField(default=0, null=False, help_text='面试时长(秒)')
     average_score = models.IntegerField(default=0, null=False, help_text='最后平均分')
     project_exp_score = models.IntegerField(default=0, null=False, help_text='项目经验得分')
     communication_score = models.IntegerField(default=0, null=False, help_text='沟通表达得分')

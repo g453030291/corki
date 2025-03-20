@@ -10,3 +10,12 @@ def calculate_remaining_time(available_seconds, start_timestamp):
     current_timestamp = int(time.time())
     remaining_seconds = available_seconds - (current_timestamp - start_timestamp)
     return max(remaining_seconds, 0)
+
+def get_time_difference(start_timestamp):
+    """
+    计算当前时间到 start_timestamp 的差值，秒数
+    :param start_timestamp:
+    :return:
+    """
+    current_timestamp = int(time.time())
+    return current_timestamp - start_timestamp

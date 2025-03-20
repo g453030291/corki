@@ -12,7 +12,7 @@ from corki.client.oss_client import OSSClient
 from corki.config import constant
 from corki.config.permissions import IsAuthedOrGuest
 from corki.models.interview import InterviewRecord
-from corki.models.user import UserCV, CUser, UserJD
+from corki.models.user import UserCV, CUser, UserJD, UserMessage
 from corki.service import user_service
 from corki.util import resp_util
 from corki.util.thread_pool import submit_task
@@ -47,6 +47,7 @@ class Login(APIView):
             user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
             UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
             UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+            UserMessage.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
 
         cache.delete(request.auth)
         access_token = AccessToken.for_user(user)

@@ -9,6 +9,7 @@ import websockets
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
+from django.db import models
 from loguru import logger
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
@@ -78,7 +79,11 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                 await self.send(text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
             elif text_data.get('operation_type') == 'stop':
                 over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+                timing = timing_util.get_time_difference(self.start_timestamp)
                 await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
+                update_time_consuming = database_sync_to_async(
+                    InterviewRecord.objects.filter(id=self.interview_record.id).update)
+                await update_time_consuming(time_consuming=models.F('time_consuming') + timing)
                 await self.send(text_data=resp_util.error(500, '已挂断!', True))
                 await self.close(code=4001, reason='收到用户挂断请求!')
                 await self.sauc_ws_client.close()
@@ -212,9 +217,13 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
 
         # 保存后先判断是否到时
         over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+        timing = timing_util.get_time_difference(self.start_timestamp)
         if over_time <= 0:
             stop_flag, stop_reason = True, '时长耗尽,请充值!'
             stop_flag = True
+            update_time_consuming = database_sync_to_async(
+                InterviewRecord.objects.filter(id=self.interview_record.id).update)
+            await update_time_consuming(time_consuming=models.F('time_consuming') + timing)
             return stop_flag, stop_reason
 
         new_question = await self.get_next_question()
@@ -223,6 +232,9 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             # 结束面试
             stop_flag, stop_reason = True, '面试结束!'
             stop_flag = True
+            update_time_consuming = database_sync_to_async(
+                InterviewRecord.objects.filter(id=self.interview_record.id).update)
+            await update_time_consuming(time_consuming=models.F('time_consuming') + timing)
             return stop_flag, stop_reason
 
         self.interview_question = new_question
