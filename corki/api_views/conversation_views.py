@@ -43,18 +43,12 @@ class ConversationInit(APIView):
         return resp_util.success(result)
 
 class ConversationScoring(APIView):
-    def get(self, request):
-        interview_id = request.query_params.get('interview_id')
-        interview = InterviewRecord.objects.get(id=interview_id)
-        serializer_class = InterviewRecord.get_serializer()
-        serializer = serializer_class(interview, many=False)
-        return resp_util.success(serializer.data)
 
     def post(self, request):
         logger.info('conversation_feedback start')
         data = json.loads(request.body)
         interview_id = data.get('interview_id')
-        InterviewRecord.objects.filter(id=interview_id).update(deleted=0)
+        InterviewRecord.objects.filter(user_id=request.user.id, id=interview_id).update(deleted=0)
         conversation_service.scoring_and_suggestion(interview_id)
         logger.info('conversation_feedback stop')
         return resp_util.success(interview_id)

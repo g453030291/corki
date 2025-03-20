@@ -24,11 +24,11 @@ from corki.api_views.conversation_views import ConversationInit, ConversationSco
 from corki.api_views.file_views import FileViews
 from corki.api_views.guest_views import GuestTokenView
 from corki.api_views.health_views import LivenessViews, ReadinessViews
+from corki.api_views.interview_views import InterviewList, InterviewDetail
 from corki.api_views.message_views import Message
 from corki.api_views.ocr_views import OCRViews
 from corki.api_views.short_url_views import ShortUrlView
-from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, UploadCV, \
-    InterviewList, Logout
+from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCUploadCV, CVList, JDList, Logout
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
@@ -72,6 +72,7 @@ urlpatterns = [
     path("api/conversation_scoring", ConversationScoring.as_view(), name="conversation-scoring"),
 
     path("api/interview_list", InterviewList.as_view(), name="interview-list"),
+    path("api/interview/detail", InterviewDetail.as_view(), name="interview-detail"),
 
     # file
     path("api/upload", FileViews.as_view(), name="file-upload"),

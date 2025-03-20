@@ -201,14 +201,3 @@ class PCUploadCV(APIView):
         cache.delete(token)
         submit_task(user_service.analysis_cv_jd, user_cv, None)
         return resp_util.success()
-
-class InterviewList(APIView):
-    permission_classes = [IsAuthedOrGuest]
-
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return resp_util.success()
-        interview_list = InterviewRecord.objects.filter(user_id=request.user.id).values('id', 'jd_title', 'average_score', 'created_at').order_by('-id').all()
-        serializer_class = InterviewRecord.get_serializer(field_names=('id', 'jd_title', 'average_score', 'created_at'))
-        serializer = serializer_class(interview_list, many=True)
-        return resp_util.success(serializer.data)
