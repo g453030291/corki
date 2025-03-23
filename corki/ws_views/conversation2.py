@@ -54,7 +54,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await self.sauc_init()
         # await self.send(text_data=resp_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
         await self.send(text_data=resp_util.success({'available_seconds': self.available_seconds, 'start_timestamp': self.start_timestamp}, True))
-        cache.set(self.channel_name, False, timeout=60 * 60 * 24)
+        cache.set(self.channel_name, False, timeout=60 * 60)
 
     async def disconnect(self, close_code):
         await self.sauc_ws_client.close()
@@ -188,7 +188,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             if self.answer_stop_flag >= 3:
                 async_task = cache.get(self.channel_name)
                 if async_task is False:
-                    cache.set(self.channel_name, True, timeout=60 * 60 * 24)
+                    cache.set(self.channel_name, True, timeout=60 * 60)
                     stop_flag, stop_reason = await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
                     if stop_flag:
                         logger.info(f"stop_flag:{stop_flag},连接关闭")
@@ -201,7 +201,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                         return
                     await self.send(
                         text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
-                    cache.set(self.channel_name, False, timeout=60 * 60 * 24)
+                    cache.set(self.channel_name, False, timeout=60 * 60)
                 else:
                     await self.send(text_data=resp_util.voice_success({
                                                                           'available_seconds': timing_util.calculate_remaining_time(
