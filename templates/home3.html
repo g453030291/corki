@@ -63,8 +63,8 @@
                 };
 
                 // 2. 开始连接后端 ws 接口
-                {#ws = new WebSocket('wss://ointerview.com/conversation2?token=' + document.getElementById('token').value);#}
-                ws = new WebSocket('ws://localhost:8000/conversation2?token=' + document.getElementById('token').value);
+                ws = new WebSocket('wss://ointerview.com/conversation2?token=' + document.getElementById('token').value);
+                {#ws = new WebSocket('ws://localhost:8000/conversation2?token=' + document.getElementById('token').value);#}
 
                 ws.onopen = function() {
                     console.log('连接成功');
