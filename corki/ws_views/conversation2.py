@@ -54,9 +54,11 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
         await self.sauc_init()
         # await self.send(text_data=resp_util.success({'channel_name': self.channel_name, 'sauc_log_id': self.sauc_log_id}, True))
         await self.send(text_data=resp_util.success({'available_seconds': self.available_seconds, 'start_timestamp': self.start_timestamp}, True))
+        cache.set(self.channel_name, False, timeout=60 * 60 * 24)
 
     async def disconnect(self, close_code):
         await self.sauc_ws_client.close()
+        cache.delete(self.channel_name)
         self.sauc_ws_client_is_connected = False
         logger.info(f"sauc ws connection closed.sauc_log_id:{self.sauc_log_id}")
         logger.info(f"Connection closed - Channel Name: {self.channel_name}")
@@ -88,6 +90,7 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
                 await self.close(code=4001, reason='收到用户挂断请求!')
                 await self.sauc_ws_client.close()
                 self.sauc_ws_client_is_connected = False
+                cache.delete(self.channel_name)
                 return
             else:
                 await self.send(resp_util.error(99, 'Unknown operation type', True))
@@ -183,18 +186,27 @@ class ConversationStreamWsConsumer2(AsyncWebsocketConsumer):
             if self.answer_content and len(content_text) == 0:
                 self.answer_stop_flag += 1
             if self.answer_stop_flag >= 3:
-                stop_flag, stop_reason = await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
-                if stop_flag:
-                    logger.info(f"stop_flag:{stop_flag},连接关闭")
-                    over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
-                    await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
-                    await self.send(text_data=resp_util.error(500, stop_reason, True))
-                    await self.close(code=4001, reason='The available time is insufficient, please recharge')
-                    await self.sauc_ws_client.close()
-                    self.sauc_ws_client_is_connected = False
-                    return
-                await self.send(
-                    text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
+                async_task = cache.get(self.channel_name)
+                if async_task is False:
+                    cache.set(self.channel_name, True, timeout=60 * 60 * 24)
+                    stop_flag, stop_reason = await self.get_next_step(self.interview_record.id, self.interview_question.id, self.answer_content)
+                    if stop_flag:
+                        logger.info(f"stop_flag:{stop_flag},连接关闭")
+                        over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+                        await database_sync_to_async(CUser.objects.filter(id=self.user.id).update)(available_seconds=over_time)
+                        await self.send(text_data=resp_util.error(500, stop_reason, True))
+                        await self.close(code=4001, reason='The available time is insufficient, please recharge')
+                        await self.sauc_ws_client.close()
+                        cache.delete(self.channel_name)
+                        return
+                    await self.send(
+                        text_data=resp_util.success({'question_url': self.interview_question.question_url}, True))
+                    cache.set(self.channel_name, False, timeout=60 * 60 * 24)
+                else:
+                    await self.send(text_data=resp_util.voice_success({
+                                                                          'available_seconds': timing_util.calculate_remaining_time(
+                                                                              self.available_seconds,
+                                                                              self.start_timestamp)}))
             else:
                 await self.send(text_data=resp_util.voice_success({'available_seconds': timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)}))
         else:
