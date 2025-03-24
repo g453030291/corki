@@ -24,9 +24,19 @@
         const sampleRate = 16000;
         const bufferSize = 4096;
         let isAudioPlaying = false;
+        let sendInterval;
 
         async function wsConnection() {
             try {
+                // 清理之前的连接和音频处理器
+                if (ws) {
+                    ws.close();
+                }
+                if (audioContext) {
+                    audioContext.close();
+                }
+                accumulatedData = [];
+
                 // 1. 先获取音频设备权限
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -96,6 +106,7 @@
                 ws.onclose = function() {
                     console.log('连接关闭');
                     clearInterval(sendInterval);
+                    accumulatedData = []; // 清空缓存数据
                 };
 
                 ws.onerror = function() {
