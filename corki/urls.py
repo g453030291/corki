@@ -32,6 +32,7 @@ from corki.api_views.user_views import CV, JD, Login, RequestUser, SendCode, PCU
 from corki.page_views.test_page import Home3
 from corki.ws_views.conversation import ConversationStreamWsConsumer
 from corki.ws_views.conversation2 import ConversationStreamWsConsumer2
+from corki.ws_views.conversation3 import ConversationStreamWsConsumer3
 from corki.ws_views.stt_ws import STTStreamWsConsumer
 from corki.ws_views.test import WsConsumer
 from corki.ws_views.tts import TTSAndTestWsConsumer
@@ -92,4 +93,5 @@ websocket_urlpatterns = [
     # path("test/tts_stream", TTSStreamWsConsumer.as_asgi()),
     # path("conversation", ConversationStreamWsConsumer.as_asgi()),
     path("conversation2", ConversationStreamWsConsumer2.as_asgi()),
+    path("conversation3", ConversationStreamWsConsumer3.as_asgi()),
 ]

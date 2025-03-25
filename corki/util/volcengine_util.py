@@ -51,7 +51,6 @@ def sauc2_full_client_request_param(user_id):
     }
     return param
 
-
 PROTOCOL_VERSION = 0b0001
 DEFAULT_HEADER_SIZE = 0b0001
 
@@ -168,6 +167,24 @@ def sauc_parse_response(res):
     result['payload_size'] = payload_size
     logger.info(f"sauc_parse_response: {json.dumps(result)}")
     return result
+
+def pack_request_data(bytes_data, sauc_seq):
+    """
+    生成音频数据包
+    :param bytes_data:
+    :param sauc_seq:
+    :return:
+    """
+    payload_bytes = gzip.compress(bytes_data)
+    audio_request = bytearray(sauc_ws_header(
+        message_type=0b0010,  # AUDIO_ONLY_REQUEST
+        message_type_specific_flags=0b0001
+    ))
+    audio_request.extend(sauc_ws_before_payload(sequence=sauc_seq))
+    audio_request.extend(len(payload_bytes).to_bytes(4, 'big'))
+    audio_request.extend(payload_bytes)
+    return audio_request
+
 
 def tts_full_client_request(user_id, text, operation):
     """
