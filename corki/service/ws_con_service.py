@@ -23,4 +23,4 @@ async def permission_check(query_string):
         # 如果用户的可用时间小于等于0，拒绝连接
         logger.info(f"ws conversation:User {user.id} has no available seconds.")
         allow_conn_flag = False
-    return allow_conn_flag, available_seconds
+    return allow_conn_flag, available_seconds, user.id
