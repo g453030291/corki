@@ -21,6 +21,6 @@ class GuestTokenView(APIView):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
         user = CUser(id=0, guest_code=uuid4().hex, phone='', available_seconds=0)
         access_token = AccessToken.for_user(user)
-        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
+        cache.set(constant.TOKEN_KEY_PREFIX + str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
         GuestCodeRecords.objects.create(ip_address=x_forwarded_for, guest_code=str(access_token))
         return resp_util.success({'access_token': str(access_token)})

@@ -51,14 +51,14 @@ class Login(APIView):
 
         cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
-        cache.set(str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
+        cache.set(constant.TOKEN_KEY_PREFIX + str(access_token), CUser.get_serializer()(user).data, timeout=constant.USER_CACHE_SECONDS)
         return resp_util.success({'access_token': str(access_token)})
 
 class Logout(APIView):
 
     def get(self, request):
         access_token = request.auth
-        cache.delete(str(access_token))
+        cache.delete(constant.TOKEN_KEY_PREFIX + str(access_token))
         return resp_util.success('登出成功!')
 
 class RequestUser(APIView):

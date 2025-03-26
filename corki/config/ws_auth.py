@@ -3,6 +3,7 @@ from urllib.parse import parse_qs
 from django.core.cache import cache
 from loguru import logger
 
+from corki.config import constant
 from corki.models.user import CUser
 
 
@@ -19,7 +20,7 @@ class WSAuthMiddleware:
         params = parse_qs(query_string)
         token_key = params.get("token", [None])[0]
 
-        if token_key and cache.has_key(token_key):
+        if token_key and cache.has_key(constant.TOKEN_KEY_PREFIX + token_key):
             logger.info(f"Token {token_key} validating")
             cached_data = cache.get(token_key)
             user = CUser(**cached_data)

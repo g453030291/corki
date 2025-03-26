@@ -33,7 +33,7 @@ class CrokiJWTAuthentication(JWTAuthentication):
             raise AuthenticationFailed()
         # token 从缓存中查不到也报错
         token = token.decode('utf-8')
-        cached_data = cache.get(token)
+        cached_data = cache.get(constant.TOKEN_KEY_PREFIX + token)
         if cached_data is None:
             raise AuthenticationFailed()
 
