@@ -92,6 +92,6 @@ websocket_urlpatterns = [
     # path("test/stt", STTStreamWsConsumer.as_asgi()),
     # path("test/tts_stream", TTSStreamWsConsumer.as_asgi()),
     # path("conversation", ConversationStreamWsConsumer.as_asgi()),
-    path("conversation2", ConversationStreamWsConsumer2.as_asgi()),
-    path("conversation3", ConversationStreamWsConsumer3.as_asgi()),
+    # path("conversation2", ConversationStreamWsConsumer2.as_asgi()),
+    path("ws/conversation", ConversationStreamWsConsumer3.as_asgi()),
 ]
