@@ -37,7 +37,7 @@ class CrokiJWTAuthentication(JWTAuthentication):
         if cached_data is None:
             raise AuthenticationFailed()
 
-        cache.set(token, cached_data, timeout=constant.USER_CACHE_SECONDS)
+        cache.set(constant.TOKEN_KEY_PREFIX + token, cached_data, timeout=constant.USER_CACHE_SECONDS)
         user = CUser(**cached_data)
         request.user = user
         return user, token
