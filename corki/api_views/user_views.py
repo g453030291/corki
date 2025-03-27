@@ -164,7 +164,7 @@ class JDList(APIView):
         data = json.loads(request.body)
         default_status = data.get('default_status', None)
         new_one = data.get('new_one', 0)
-        query_params = {'user_id': request.user.id, 'deleted': 0}
+        query_params = {'user_id': request.user.id, 'guest_code': request.user.guest_code, 'deleted': 0}
         if default_status is not None:
             query_params['default_status'] = default_status
         if new_one == 1:
