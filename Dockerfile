@@ -5,8 +5,7 @@ FROM alibaba-cloud-linux-3-registry.cn-hangzhou.cr.aliyuncs.com/alinux3/python:3
 WORKDIR /app
 
 #RUN apt-get update && apt-get install -y build-essential libssl-dev libffi-dev python3-dev
-RUN yum update -y && yum install -y gcc make libssl-devel libffi-devel python3-devel
-
+RUN yum install -y gcc make openssl-devel libffi-devel python3-devel
 
 # Copy the requirements file into the container
 COPY requirements.txt .
