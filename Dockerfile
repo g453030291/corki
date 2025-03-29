@@ -1,6 +1,6 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim
-
+#FROM python:3.11-slim
+FROM alibaba-cloud-linux-3-registry.cn-hangzhou.cr.aliyuncs.com/alinux3/python:3.11.1
 # Set the working directory in the container
 WORKDIR /app
 
