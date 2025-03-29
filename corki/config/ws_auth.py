@@ -22,7 +22,7 @@ class WSAuthMiddleware:
 
         if token_key and cache.has_key(constant.TOKEN_KEY_PREFIX + token_key):
             logger.info(f"Token {token_key} validating")
-            cached_data = cache.get(token_key)
+            cached_data = cache.get(constant.TOKEN_KEY_PREFIX + token_key)
             user = CUser(**cached_data)
             if user.id == 0:
                 logger.error(f"Token {token_key} is invalid")
