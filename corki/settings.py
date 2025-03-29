@@ -129,7 +129,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_USER')}@{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/0",
+        "LOCATION": f"rediss://{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/0",
         "KEY_PREFIX": "corki",
         "VERSION": 1,
         "OPTIONS": {
