@@ -23,6 +23,8 @@ class SendCode(APIView):
     def post(self, request):
         data = json.loads(request.body)
         phone = data['phone']
+        if phone is None:
+            return resp_util.error(500, '手机号不能为空!')
         # 生成 4 位验证码
         verification_code = random.randint(1000, 9999)
         # 将验证码存入缓存
