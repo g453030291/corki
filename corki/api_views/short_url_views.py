@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 
 
 class ShortUrlView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
         token = ''.join(random.choices(string.ascii_letters, k=8))
