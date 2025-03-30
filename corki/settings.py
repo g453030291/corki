@@ -146,14 +146,14 @@ CACHES = {
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+        # 'BACKEND': 'channels.layers.InMemoryChannelLayer'
         # 或者如果使用 Redis
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        # 'CONFIG': {
-        #     "hosts": [('127.0.0.1', 6379)],
-        #     "capacity": 1500,  # 默认100，可根据需求调整
-        #     "expiry": 60,  # 消息过期时间（秒）
-        # },
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [f"redis://{os.getenv('REDIS_USER')}:{os.getenv('REDIS_PASSWORD')}@{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/1"],
+            "capacity": 100,  # 默认100，可根据需求调整
+            "expiry": 30,  # 消息过期时间（秒）
+        },
     },
 }
 

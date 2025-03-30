@@ -8,6 +8,7 @@ openai==1.59.7
 django-redis==5.4.0
 websockets==14.1
 channels==4.2.0
+channels_redis==4.2.1
 daphne==4.1.2
 pydub==0.25.1
 loguru==0.7.2
