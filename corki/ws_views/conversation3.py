@@ -2,7 +2,6 @@ import gzip
 import json
 import os
 import time
-import traceback
 import uuid
 
 import asyncio
@@ -235,9 +234,10 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
         logger.info(f'sauc_init_resp:{json.dumps(result, indent=4)}')
 
     async def clear_and_close_conn(self, stop_reason):
+        current_ts = int(time.time())
         logger.info("触发服务端主动关闭连接")
         # 更新用户剩余时间
-        over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp)
+        over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp, current_ts)
         await database_sync_to_async(CUser.objects.filter(id=self.user_id).update)(available_seconds=over_time)
         # 更新面试记录时间
         update_time_consuming = database_sync_to_async(InterviewRecord.objects.filter(id=self.interview_record.id).update)

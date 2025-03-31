@@ -1,6 +1,5 @@
 import json
 import random
-from uuid import uuid4
 
 from django.core.cache import cache
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -8,10 +7,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from corki.client import sms_client
-from corki.client.oss_client import OSSClient
 from corki.config import constant
 from corki.config.permissions import IsAuthedOrGuest
-from corki.models.interview import InterviewRecord
 from corki.models.user import UserCV, CUser, UserJD, UserMessage
 from corki.service import user_service
 from corki.util import resp_util
