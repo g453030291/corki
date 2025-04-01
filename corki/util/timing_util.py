@@ -1,5 +1,8 @@
 import time
 
+from loguru import logger
+
+
 def calculate_remaining_time(available_seconds, start_timestamp, current_ts=None):
     """
     计算是否还有可用时长,用传入的 start_timestamp 和当前时间戳对比.不能返回负数.如果已经超过,就返回 0
@@ -11,7 +14,7 @@ def calculate_remaining_time(available_seconds, start_timestamp, current_ts=None
     if current_ts is None:
         current_ts = int(time.time())
     remaining_seconds = available_seconds - (current_ts - start_timestamp)
-    # print(f"Available seconds: {available_seconds}, Start timestamp: {start_timestamp}, Current timestamp: {current_ts}, Remaining seconds: {remaining_seconds}")
+    logger.info(f"Available seconds: {available_seconds}, Start timestamp: {start_timestamp}, Current timestamp: {current_ts}, Remaining seconds: {remaining_seconds}")
     return max(remaining_seconds, 0)
 
 def get_time_difference(start_timestamp, current_timestamp=None):
@@ -24,5 +27,5 @@ def get_time_difference(start_timestamp, current_timestamp=None):
     if current_timestamp is None:
         current_timestamp = int(time.time())
     time_difference = current_timestamp - start_timestamp
-    # print(f"Start timestamp: {start_timestamp}, Current timestamp: {current_timestamp}, Time difference: {time_difference}")
+    logger.info(f"Start timestamp: {start_timestamp}, Current timestamp: {current_timestamp}, Time difference: {time_difference}")
     return time_difference
