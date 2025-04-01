@@ -44,10 +44,9 @@ class Login(APIView):
         user = CUser.objects.filter(phone=phone_number).first()
         if user is None:
             user = CUser.objects.create(phone=phone_number, available_seconds=constant.NEW_USER_FREE_SECONDS)
-        else:
-            UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
-            UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
-            UserMessage.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+        UserCV.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+        UserJD.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
+        UserMessage.objects.filter(guest_code=request.user.guest_code).update(user_id=user.id, guest_code='')
 
         cache.delete(request.auth)
         access_token = AccessToken.for_user(user)
