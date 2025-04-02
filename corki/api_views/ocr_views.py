@@ -21,5 +21,5 @@ class OCRViews(APIView):
                            "schema: {'jd_title':'', 'jd_content':''}",
             user_prompts="".join(ocr_result)
         )
-        decoded_object = json_repair.loads(completion_response.replace("```", "").replace("json", ""))
+        decoded_object = json_repair.loads(completion_response)
         return resp_util.success(decoded_object)

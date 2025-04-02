@@ -101,13 +101,12 @@ class AliClient:
 
 
 if __name__ == '__main__':
-    InterviewRecord.objects.create()
-    # ocr_result = AliClient.ocr('https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/31/14f6e418e3f643799361eb807d75ead5.jpg')
-    # print(ocr_result)
+    ocr_result = AliClient.ocr('https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/test/Screenshot_2025_040.jpg')
+    print(ocr_result)
 
     # Example of using doc_mind method
     # doc_result = AliClient.doc_mind(
-    #     url='https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/12/2dc6776f093049eb9d8f0cd323543c78.pdf',
+    #     url='https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/12/2dc6776f093049ed323543c78.pdf',
     #     file_name='2dc6776f093049eb9d8f0cd323543c78.pdf'
     # )
     # print(doc_result)
