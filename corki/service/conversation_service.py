@@ -244,6 +244,8 @@ def process_interview_module(interview_id, interview_module):
         system_prompts=prompts_manage.prompts_content,
         user_prompts=content
     )
+    # ,
+    # model = 'ep-20250203164051-95ppp'
 
     # 解析返回结果
     decoded_object = json_repair.loads(completion_response)

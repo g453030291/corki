@@ -4,9 +4,11 @@ import sys
 
 import django
 from loguru import logger
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'corki.settings'
 django.setup()
+from corki.models.interview import InterviewRecord
+
+
 
 from typing import List, Dict, Any
 
@@ -99,12 +101,13 @@ class AliClient:
 
 
 if __name__ == '__main__':
-    # ocr_result = AliClient.ocr('https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/12/testjd.jpg')
+    InterviewRecord.objects.create()
+    # ocr_result = AliClient.ocr('https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/31/14f6e418e3f643799361eb807d75ead5.jpg')
     # print(ocr_result)
 
     # Example of using doc_mind method
-    doc_result = AliClient.doc_mind(
-        url='https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/12/2dc6776f093049eb9d8f0cd323543c78.pdf',
-        file_name='2dc6776f093049eb9d8f0cd323543c78.pdf'
-    )
-    print(doc_result)
+    # doc_result = AliClient.doc_mind(
+    #     url='https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/03/12/2dc6776f093049eb9d8f0cd323543c78.pdf',
+    #     file_name='2dc6776f093049eb9d8f0cd323543c78.pdf'
+    # )
+    # print(doc_result)
