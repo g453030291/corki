@@ -10,7 +10,6 @@ from concurrent.futures import wait
 import websockets
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.core.cache import cache
 from django.db import models
 from loguru import logger
 
@@ -36,6 +35,7 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
         self.answer_content = ''
         self.answer_stop_flag = 0
         self.answer_stop_key = ''
+        self.close_flag_key = ''
         # 语音识别
         self.sauc_url = "wss://openspeech.bytedance.com/api/v3/sauc/bigmodel"
         self.sauc_ws_client = None
@@ -52,6 +52,8 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
         await self.accept()
         logger.info(f"New connection established - Channel Name: {self.channel_name}")
         await self.sauc_init()
+        self.answer_stop_key = self.channel_name + '_answer_stop'
+        self.close_flag_key = self.channel_name + '_close_flag'
         await self.send(text_data=resp_util.success({'available_seconds': self.available_seconds, 'start_timestamp': self.start_timestamp}, True))
 
     async def disconnect(self, close_code):
@@ -234,17 +236,21 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
         logger.info(f'sauc_init_resp:{json.dumps(result, indent=4)}')
 
     async def clear_and_close_conn(self, stop_reason):
-        current_ts = int(time.time())
-        logger.info("触发服务端主动关闭连接")
-        # 更新用户剩余时间
-        over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp, current_ts)
-        await database_sync_to_async(CUser.objects.filter(id=self.user_id).update)(available_seconds=over_time)
-        # 更新面试记录时间
-        update_time_consuming = database_sync_to_async(InterviewRecord.objects.filter(id=self.interview_record.id).update)
-        timing = timing_util.get_time_difference(self.start_timestamp)
-        await update_time_consuming(time_consuming=models.F('time_consuming') + timing)
-        # 关闭连接
-        await self.send(text_data=resp_util.error(500, stop_reason, True))
-        await self.close(code=4001, reason='The available time is insufficient, please recharge')
-        await self.sauc_ws_client.close()
-        self.sauc_ws_client_is_connected = False
+        lock = DistributedLock(self.close_flag_key, timeout=60)
+        if lock.acquire(blocking=False, retry_interval=0, retry_times=0):
+            current_ts = int(time.time())
+            logger.info("触发服务端主动关闭连接")
+            # 更新用户剩余时间
+            over_time = timing_util.calculate_remaining_time(self.available_seconds, self.start_timestamp, current_ts)
+            await database_sync_to_async(CUser.objects.filter(id=self.user_id).update)(available_seconds=over_time)
+            # 更新面试记录时间
+            update_time_consuming = database_sync_to_async(InterviewRecord.objects.filter(id=self.interview_record.id).update)
+            timing = timing_util.get_time_difference(self.start_timestamp)
+            await update_time_consuming(time_consuming=models.F('time_consuming') + timing)
+            # 关闭连接
+            await self.send(text_data=resp_util.error(500, stop_reason, True))
+            await self.close(code=4001, reason='The available time is insufficient, please recharge')
+            await self.sauc_ws_client.close()
+            self.sauc_ws_client_is_connected = False
+        else:
+            logger.info("获取锁失败,clear_and_close ing...跳过")
