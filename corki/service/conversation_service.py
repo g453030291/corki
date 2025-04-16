@@ -134,14 +134,26 @@ def completions_by_key(key, system_prompts, user_prompts="和我打个招呼吧"
 
     return completion_response
 
-def conversation_init(cv, jd, cv_id, jd_id, jd_title, user):
+def pre_conversation_init(cv, jd, cv_id, jd_id, jd_title, user):
+    url = "https://corki-oss.oss-cn-beijing.aliyuncs.com/2025/static/start_conversation.mp3"
+    interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id, jd_title=jd_title,
+                                                      deleted=1)
+    InterviewQuestion.objects.create(interview_id=interview_record.id, question_content="你好，现在面试正式开始！请先做一个自我介绍吧！",
+                                     module="behavioral_pattern", question_closely_status=1, question_url=url)
+    logger.info("conversation_init start")
+    submit_task(conversation_init, cv, jd, interview_record)
+    logger.info("conversation_init end")
+    return {'interview_record_id': interview_record.id}
+
+
+def conversation_init(cv, jd, interview_record):
     oss_client = OSSClient()
     # 1.获取当前初始对话的CV/JD
     completion_response = doubao_client.completions(
         system_prompts=system_prompt_content,
         user_prompts=f"user_profile:\n{cv}\n,job_information:\n{jd}"
     )
-    interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id, jd_title=jd_title, deleted=1)
+    # interview_record = InterviewRecord.objects.create(user_id=user.id, cv_id=cv_id, jd_id=jd_id, jd_title=jd_title, deleted=1)
     # 2.调用LLM API生成问题
     completion_json = json_repair.loads(completion_response.replace("```", "").replace("json", ""))
     question_list = []

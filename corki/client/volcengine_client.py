@@ -14,7 +14,7 @@ appid = os.getenv('V_APP_ID')
 access_token = os.getenv('V_ACCESS_TOKEN')
 cluster = "volcano_tts"
 
-voice_type = "BV406_V2_streaming"
+voice_type = "BV700_streaming"
 host = "openspeech.bytedance.com"
 api_url = f"https://{host}/api/v1/tts"
 
@@ -39,7 +39,7 @@ request_json = {
     },
     "request": {
         "reqid": str(uuid.uuid4()),
-        "text": "在处理高并发请求时，如何利用Redis进行缓存优化？",
+        "text": "你好，现在面试正式开始！请先做一个自我介绍吧！",
         "text_type": "plain",
         "operation": "query",
         "with_frontend": 1,

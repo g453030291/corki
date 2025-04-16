@@ -127,11 +127,17 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
             await self.clear_and_close_conn('时长耗尽,请充值!')
             return
 
-        new_question = await self.get_next_question()
+        new_question, conversation_start_flag = await self.get_next_question()
         # 都没有,就结束面试
         if new_question is None:
-            await self.clear_and_close_conn('面试结束!')
-            return
+            if conversation_start_flag is False:
+                await self.clear_and_close_conn('面试结束!')
+                lock.release()
+                return
+            else:
+                await self.send(text_data=resp_util.success({'available_seconds': self.available_seconds, 'start_timestamp': self.start_timestamp}, True))
+                lock.release()
+                return
 
         self.interview_question = new_question
         self.answer_content = ''
@@ -140,10 +146,13 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
         lock.release()
 
     async def get_next_question(self):
+        conversation_start_flag = False
+        # 判断是否是第一个问题
+        if '你好，现在面试正式开始！请先做一个自我介绍吧！' == self.interview_question.question_content:
+            conversation_start_flag = True
         filter_questions = database_sync_to_async(InterviewQuestion.objects.filter)
         create_questions = database_sync_to_async(InterviewQuestion.objects.create)
         first_question = database_sync_to_async(lambda qs: qs.order_by('id').first())
-        last_question = database_sync_to_async(lambda qs: qs.order_by('-id').first())
         # 根据当前的问题状态判断直接返回下一个问题,还是生成追问,再返回下一个问题
         # 先判断主问还是追问
         # 主问判断是否生成过追问 没有就去生成追问,并且查询追问问题返回。查询不到就返回下一轮问题
@@ -167,17 +176,27 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
                     futures = [submit_task(conversation_service.process_audio, sub_question, self.oss_client) for sub_question in sub_questions]
                     wait(futures)
         # 查询有没有未回答的追问
-        questions = await filter_questions(interview_id=self.interview_record.id,
-                                           question_type=1,
-                                           question_status=0)
+        if conversation_start_flag:
+            questions = await filter_questions(interview_id=self.interview_record.id,
+                                               question_status=0,
+                                               question_type=0,
+                                               question_url__gt='')
+        else:
+            questions = await filter_questions(interview_id=self.interview_record.id,
+                                               question_type=1,
+                                               question_status=0)
         new_question = await first_question(questions)
+        if conversation_start_flag and new_question is None:
+            logger.info('自我介绍回答完毕,等待问题生成中...')
+            return None, conversation_start_flag
+
         # 没有追问就取下轮问题
         if new_question is None:
             questions = await filter_questions(interview_id=self.interview_record.id,
                                                parent_question_id=0,
                                                question_status=0)
             new_question = await first_question(questions)
-        return new_question
+        return new_question, conversation_start_flag
 
     async def process_text(self, text_json):
         """

@@ -39,7 +39,8 @@ class ConversationInit(APIView):
         else:
             jd = data.get('jd', '') or conversation_service.test_jd
 
-        result = conversation_service.conversation_init(cv, jd, cv_id, jd_id, jd_title, request.user)
+        # result = conversation_service.conversation_init(cv, jd, cv_id, jd_id, jd_title, request.user)
+        result = conversation_service.pre_conversation_init(cv, jd, cv_id, jd_id, jd_title, request.user)
         return resp_util.success(result)
 
 class ConversationScoring(APIView):
