@@ -173,8 +173,15 @@ class ConversationStreamWsConsumer3(AsyncWebsocketConsumer):
                                                              question_type=1,
                                                              parent_question_id=self.interview_question.id)
                         sub_questions.append(new_question)
-                    futures = [submit_task(conversation_service.process_audio, sub_question, self.oss_client) for sub_question in sub_questions]
-                    wait(futures)
+                        # 并发异步，不阻塞事件循环
+                        loop = asyncio.get_running_loop()
+                        futures = [
+                            loop.run_in_executor(None, conversation_service.process_audio, sub_question,
+                                                 self.oss_client)
+                            for sub_question in sub_questions
+                        ]
+                        if futures:
+                            await asyncio.gather(*futures)
         # 查询有没有未回答的追问
         if conversation_start_flag:
             questions = await filter_questions(interview_id=self.interview_record.id,
