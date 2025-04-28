@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r re
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 80
+EXPOSE 8000
 
 # Start the Django application
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:80"]
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
